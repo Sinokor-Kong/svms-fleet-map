@@ -1981,7 +1981,12 @@ function buildMap() {
   // (not the whole world) — zooming out from there (wheel / − / drag) reveals
   // real geography everywhere, since the base layer is a genuine world map. ──
   const PAD_DEG = 4.5;
-  const MIN_K = 1, MAX_K = 4000;
+  // MAX_K used to be 4000 — fine for a mouse wheel (1.15x per tick, ~57 ticks
+  // to get there), but a single real pinch gesture easily spans a 10-20x
+  // finger-distance ratio, so it took just a few pinches to zoom past all the
+  // coastline detail into a single-color dead zone with nothing on screen.
+  // Capped to a level that still resolves a crowded port anchorage clearly.
+  const MIN_K = 1, MAX_K = 260;
   const FIT_MARGIN = 0.9; // leave a little breathing room around the selection
   const frameCx = margin.left + plotW / 2, frameCy = margin.top + plotH / 2;
 
@@ -2323,7 +2328,9 @@ function buildMap() {
       e.preventDefault();
       const [a, b] = e.touches;
       const dist = touchDist(a, b);
-      if (touchPinch.dist > 0) zoomAt(touchPinch.svgX, touchPinch.svgY, dist / touchPinch.dist);
+      // ignore updates where either sample has fingers nearly together — a
+      // tiny denominator turns normal finger jitter into a wild ratio spike
+      if (touchPinch.dist > 12 && dist > 12) zoomAt(touchPinch.svgX, touchPinch.svgY, dist / touchPinch.dist);
       const mid = touchMid(a, b);
       const svgMid = clientToSvg(mid.x, mid.y);
       touchPinch = { dist, svgX: svgMid.x, svgY: svgMid.y };
