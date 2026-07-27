@@ -1,4 +1,4 @@
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Fleet Last Reported Positions</title>
 <style>
   /* Barlow Condensed SemiBold — subset to Latin punctuation/digits only, ~11KB.
@@ -928,6 +928,15 @@
 </div>
 
 <script>
+// The viewport meta's maximum-scale/user-scalable stops native pinch-zoom on
+// most mobile browsers, but iOS Safari (10+) deliberately ignores that as an
+// accessibility override — pinching anywhere on the page still triggers its
+// own page-bitmap zoom (blurry, and fights with the map's own crisp SVG
+// pinch-zoom). Blocking it at the event level works everywhere, since it
+// isn't a hint the browser can choose to ignore.
+document.addEventListener("touchmove", (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+
 // ── 자동 표기용 데이터: 이 배열만 갱신하면 지도가 자동으로 다시 그려집니다 ──
 const VESSELS = [
   { name: "BELGIUM B", code: "BGBB", condition: "ANCHORED", ballast: "Laden", course: 260, inPort: "SINGAPORE, SINGAPORE", nextPort: null, eta: "2026-07-26 06:00", etb: "2026-07-24 00:00", etd: "2026-07-26 00:00", avgSpeed: 9, date: "2026-07-25 12:00", lat: 1.2883, lon: 104.0633, track: [{date:"2026-07-14",lat:14.2983,lon:64.1133}, {date:"2026-07-15",lat:11.1817,lon:67.7217}, {date:"2026-07-16",lat:8.11,lon:71.2517}, {date:"2026-07-17",lat:7.25,lon:75.53}, {date:"2026-07-18",lat:5.5383,lon:80.175}, {date:"2026-07-19",lat:5.4333,lon:84.58}, {date:"2026-07-20",lat:5.3733,lon:87.6167}, {date:"2026-07-21",lat:5.3267,lon:91.3217}, {date:"2026-07-22",lat:6.17,lon:94.995}, {date:"2026-07-23",lat:4.415,lon:99.4217}, {date:"2026-07-24",lat:1.1833,lon:103.835}, {date:"2026-07-25",lat:1.2883,lon:104.0633}] },
