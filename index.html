@@ -1,3 +1,4 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fleet Last Reported Positions</title>
 <style>
   /* Barlow Condensed SemiBold — subset to Latin punctuation/digits only, ~11KB.
@@ -310,6 +311,7 @@
     overflow: hidden;
     cursor: grab;
     box-shadow: inset 0 0 0 1px var(--border);
+    touch-action: none;
   }
   .map-frame.panning { cursor: grabbing; }
   svg.map { display: block; width: 100%; height: auto; background: var(--ocean); touch-action: none; }
@@ -751,8 +753,10 @@
   }
   .tip-schedule .tip-sub { opacity: 0.7; font-size: 10.5px; }
 
+  #tableWrap { overflow-x: auto; }
   table.data-table {
     width: 100%;
+    min-width: 900px;
     border-collapse: collapse;
     font-size: 13px;
     margin-top: 14px;
@@ -783,6 +787,27 @@
   table.data-table tbody tr:nth-child(even) td { background: var(--page); }
   table.data-table tbody tr:hover td { background: var(--accent-wash); }
   table.data-table tr:last-child td { border-bottom: none; }
+
+  /* narrow screens: stack the sidebar above the map instead of side-by-side,
+     and give touch targets (zoom buttons, table) room to work with a thumb */
+  @media (max-width: 760px) {
+    .viz-root { padding: 14px; }
+    h1 { font-size: 22px; }
+    .panel { padding: 14px; border-radius: 12px; }
+    .map-toolbar { gap: 10px; }
+    .toolbar-actions { border-left: none; padding-left: 0; flex-wrap: wrap; row-gap: 8px; }
+    .content-row { flex-direction: column; }
+    .sidebar {
+      width: 100%;
+      max-height: 240px;
+      padding-right: 0;
+      padding-bottom: 14px;
+      border-right: none;
+      border-bottom: 1px solid var(--grid);
+    }
+    .zoom-controls button { width: 34px; height: 32px; font-size: 15px; }
+    .map-legend { gap: 8px 16px; }
+  }
 </style>
 
 <div class="viz-root">
@@ -2251,6 +2276,87 @@ function buildMap() {
     applyTransform();
   });
   window.addEventListener("mouseup", () => { isPanning = false; frame.classList.remove("panning"); });
+
+  // ── touch: single-finger drag-pan + two-finger pinch-zoom, mirroring the
+  // mouse handlers above. `.map-frame` has touch-action:none (CSS) so the
+  // browser never intercepts these for its own page-scroll/pinch-zoom — which
+  // means we don't need preventDefault() to make panning/pinching work, and
+  // critically must NOT call it on a plain tap, or the browser's synthesized
+  // "click" (which vessel-marker selection depends on) would never fire. ──
+  const touchDist = (a, b) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+  const touchMid = (a, b) => ({ x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 });
+
+  let touchMode = null;      // "pan" | "pinch" | null
+  let touchPanStart = null;  // { x, y, tx, ty }
+  let touchMoved = false;
+  let touchPinch = null;     // { dist, svgX, svgY }
+  let lastTapTs = 0, lastTapPt = null;
+
+  frame.addEventListener("touchstart", (e) => {
+    hideTooltip();
+    if (e.touches.length === 1) {
+      touchMode = "pan"; touchMoved = false;
+      const t = e.touches[0];
+      touchPanStart = { x: t.clientX, y: t.clientY, tx: viewState.tx, ty: viewState.ty };
+    } else if (e.touches.length === 2) {
+      touchMode = "pinch";
+      const [a, b] = e.touches;
+      const mid = touchMid(a, b);
+      const svgMid = clientToSvg(mid.x, mid.y);
+      touchPinch = { dist: touchDist(a, b), svgX: svgMid.x, svgY: svgMid.y };
+    }
+  }, { passive: true });
+
+  frame.addEventListener("touchmove", (e) => {
+    if (touchMode === "pan" && e.touches.length === 1) {
+      const t = e.touches[0];
+      const svgRect = svg.getBoundingClientRect();
+      const dX = (t.clientX - touchPanStart.x) / svgRect.width * W;
+      const dY = (t.clientY - touchPanStart.y) / svgRect.height * H;
+      if (Math.abs(dX) > 0.5 || Math.abs(dY) > 0.5) { touchMoved = true; hideTooltip(); }
+      if (!touchMoved) return; // a still-resting finger must not block the tap-to-select click
+      e.preventDefault();
+      const clamped = clampPan(viewState.k, touchPanStart.tx + dX, touchPanStart.ty + dY);
+      viewState.tx = clamped.tx; viewState.ty = clamped.ty;
+      applyTransform();
+    } else if (touchMode === "pinch" && e.touches.length === 2) {
+      e.preventDefault();
+      const [a, b] = e.touches;
+      const dist = touchDist(a, b);
+      if (touchPinch.dist > 0) zoomAt(touchPinch.svgX, touchPinch.svgY, dist / touchPinch.dist);
+      const mid = touchMid(a, b);
+      const svgMid = clientToSvg(mid.x, mid.y);
+      touchPinch = { dist, svgX: svgMid.x, svgY: svgMid.y };
+    }
+  }, { passive: false });
+
+  frame.addEventListener("touchend", (e) => {
+    if (e.touches.length === 2) {
+      // one finger lifted mid-pinch — reseed pinch state from the remaining pair
+      const [a, b] = e.touches;
+      const mid = touchMid(a, b);
+      const svgMid = clientToSvg(mid.x, mid.y);
+      touchPinch = { dist: touchDist(a, b), svgX: svgMid.x, svgY: svgMid.y };
+      touchMode = "pinch";
+    } else if (e.touches.length === 1) {
+      touchMode = "pan"; touchMoved = false;
+      const t = e.touches[0];
+      touchPanStart = { x: t.clientX, y: t.clientY, tx: viewState.tx, ty: viewState.ty };
+    } else {
+      if (touchMode === "pan" && !touchMoved) {
+        const now = Date.now();
+        const t = e.changedTouches[0];
+        if (lastTapPt && now - lastTapTs < 320 && Math.hypot(t.clientX - lastTapPt.x, t.clientY - lastTapPt.y) < 24) {
+          const p = clientToSvg(t.clientX, t.clientY);
+          zoomAt(p.x, p.y, 1.6);
+          lastTapTs = 0; lastTapPt = null;
+        } else {
+          lastTapTs = now; lastTapPt = { x: t.clientX, y: t.clientY };
+        }
+      }
+      touchMode = null; touchPanStart = null; touchPinch = null;
+    }
+  });
 
   document.getElementById("zoomInBtn").addEventListener("click", () => {
     zoomAt(margin.left + plotW / 2, margin.top + plotH / 2, 1.4);
