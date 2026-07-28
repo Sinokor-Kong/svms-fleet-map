@@ -1464,8 +1464,14 @@ function placeLabelsNoOverlap(items) {
   const placedBoxes = [];
   const pad = 1.5;
   items.forEach(({ p, label, leader }) => {
-    const bbox = label.getBBox();
-    const w = bbox.width || 20, h = bbox.height || 8;
+    // getBBox() forces an SVG layout pass; every label here has static text
+    // set once at creation, so its box never changes — measure once and reuse
+    if (label._lw === undefined) {
+      const bbox = label.getBBox();
+      label._lw = bbox.width || 20;
+      label._lh = bbox.height || 8;
+    }
+    const w = label._lw, h = label._lh;
 
     let chosen = null;
     for (const { r, theta } of LABEL_CANDIDATES) {
@@ -1741,6 +1747,12 @@ function buildMap() {
     const nameLabel = el("text", { class: "vessel-label" });
     nameLabel.textContent = v.name;
     nameLabel.style.display = "none";
+    // leader line for when the no-overlap placement below has to nudge this
+    // vessel's name away from the dot to clear a crowded neighbor — same
+    // technique already used for port labels and trail date labels
+    const leader = el("line", { class: "label-leader" });
+    leader.style.display = "none";
+    g.appendChild(leader);
     g.appendChild(dotWrap);
     g.appendChild(nameLabel);
     // a vessel with no reported position yet gets no map marker at all —
@@ -1749,15 +1761,14 @@ function buildMap() {
     if (posOk) overlay.appendChild(g);
 
     const marker = {
-      g, ox: posOk ? X(v.lon) : 0, oy: posOk ? Y(v.lat) : 0, sx: 0, sy: 0,
+      g, nameLabel, leader, ox: posOk ? X(v.lon) : 0, oy: posOk ? Y(v.lat) : 0, sx: 0, sy: 0,
       apply(sx, sy) {
         this.sx = sx; this.sy = sy;
         const rot = showHeading ? ` rotate(${v.course})` : "";
         dotWrap.setAttribute("transform", `translate(${sx},${sy})${rot}`);
+        // default (uncrowded) position — updateNameVisibility() overrides this
+        // with a nudged position + leader line for any vessel with close neighbors
         nameLabel.setAttribute("x", sx + 6); nameLabel.setAttribute("y", sy + 3);
-      },
-      setNameVisible(show) {
-        nameLabel.style.display = show ? "" : "none";
       },
     };
     if (posOk) overlayItems.push(marker);
@@ -1968,12 +1979,29 @@ function buildMap() {
     applySelection();
   });
 
-  // Per-marker (not global): each SELECTED vessel shows its name once it has
-  // enough clearance from its nearest SELECTED neighbor — hidden vessels don't
-  // count, and crowding elsewhere in the fleet doesn't block a clear pair.
+  // Every SELECTED vessel's name is always shown — a marker with a close
+  // neighbor no longer just hides its name (a dense anchorage could stay
+  // unreadable at any zoom level since real-world separation there can be
+  // smaller than 60 screen units even at max zoom); instead its label is
+  // nudged to the nearest clear spot with a leader line back to the dot,
+  // via the same no-overlap placement already used for ports/trail dates.
+  // Vessels with plenty of clearance keep the plain default label (cheap,
+  // no leader) — only the actually-crowded subset pays for the placement
+  // search, so a scattered fleet costs the same as before.
   const NAME_MIN_GAP = 60; // viewBox units of clearance from nearest neighbor
+  // with a large selection (the default is all 79) still at roughly the
+  // zoomed-out "fits everyone" level, names would only ever get in each
+  // other's way — skip labeling entirely until the user actually zooms in
+  // past the world view, or has narrowed the selection down to a handful.
+  const NAME_DECLUTTER_COUNT = 10;
+  const NAME_ZOOM_GATE = 1.3; // × baseFit.k before names start appearing
   function updateNameVisibility() {
-    const visible = vesselMarkers.filter((m, i) => selectedIdx.has(i));
+    const visible = vesselMarkers.filter((m, i) => selectedIdx.has(i) && hasPos(VESSELS[i]));
+    if (visible.length > NAME_DECLUTTER_COUNT && viewState.k < baseFit.k * NAME_ZOOM_GATE) {
+      visible.forEach(m => { m.nameLabel.style.display = "none"; m.leader.style.display = "none"; });
+      return;
+    }
+    const crowded = [];
     visible.forEach(m => {
       let nearest = Infinity;
       visible.forEach(other => {
@@ -1982,8 +2010,18 @@ function buildMap() {
         const d = Math.sqrt(dx * dx + dy * dy);
         if (d < nearest) nearest = d;
       });
-      m.setNameVisible(nearest >= NAME_MIN_GAP);
+      m.nameLabel.style.display = "";
+      if (nearest < NAME_MIN_GAP) {
+        crowded.push(m);
+      } else {
+        m.leader.style.display = "none";
+        m.nameLabel.setAttribute("x", m.sx + 6);
+        m.nameLabel.setAttribute("y", m.sy + 3);
+      }
     });
+    if (crowded.length) {
+      placeLabelsNoOverlap(crowded.map(m => ({ p: { x: m.sx, y: m.sy }, label: m.nameLabel, leader: m.leader })));
+    }
   }
 
   // ── fit-to-selection: computes the view that frames a given set of vessels
