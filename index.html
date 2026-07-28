@@ -1460,7 +1460,26 @@ for (const r of LABEL_RADII) {
     LABEL_CANDIDATES.push({ r, theta: (a / LABEL_ANGLE_STEPS) * Math.PI * 2 - Math.PI / 2 });
   }
 }
-function placeLabelsNoOverlap(items) {
+function placeLabelsNoOverlap(items, opts) {
+  // hideOnCollision: for ports/trail dates (a bounded, always-shown set) a
+  // label that can't find a clear spot still gets placed at the farthest
+  // ring rather than disappearing. Vessel names opt into the opposite
+  // behavior — with 20+ crowded ships this is what turns "cram every name in
+  // regardless, overlapping and leader-line spaghetti" into a clean
+  // progressive reveal: whichever names actually fit show up now, the rest
+  // wait for the next bit of zoom, when the growing screen-space gaps
+  // between real-world positions finally give them room too.
+  const hideOnCollision = opts && opts.hideOnCollision;
+  // capping how far a label is allowed to reach (vs. the full ring set ports/
+  // trail-dates use) matters more than collision-correctness for how "clean"
+  // a dense cluster looks — a technically non-overlapping label reached via a
+  // long leader line crossing several other lines still reads as spaghetti.
+  // Hiding those instead of stretching for them is what makes the reveal
+  // actually look uncluttered as you zoom in, rather than just "more crammed
+  // in without literal overlap."
+  const candidates = opts && opts.maxRadius
+    ? LABEL_CANDIDATES.filter(c => c.r <= opts.maxRadius)
+    : LABEL_CANDIDATES;
   const placedBoxes = [];
   const pad = 1.5;
   items.forEach(({ p, label, leader }) => {
@@ -1474,13 +1493,18 @@ function placeLabelsNoOverlap(items) {
     const w = label._lw, h = label._lh;
 
     let chosen = null;
-    for (const { r, theta } of LABEL_CANDIDATES) {
+    for (const { r, theta } of candidates) {
       const cx = p.x + r * Math.cos(theta), cy = p.y + r * Math.sin(theta);
       const box = { left: cx - pad, right: cx + w + pad, top: cy - h - pad, bottom: cy + pad };
       const overlaps = placedBoxes.some(b => box.left < b.right && box.right > b.left && box.top < b.bottom && box.bottom > b.top);
       if (!overlaps) { chosen = { cx, cy, box, r }; break; }
     }
     if (!chosen) {
+      if (hideOnCollision) {
+        label.style.display = "none";
+        if (leader) leader.style.display = "none";
+        return;
+      }
       // every candidate collided (extremely dense cluster) — use the farthest
       // ring anyway rather than dropping the label
       const { r, theta } = LABEL_CANDIDATES[LABEL_CANDIDATES.length - 1];
@@ -1489,6 +1513,7 @@ function placeLabelsNoOverlap(items) {
     }
 
     placedBoxes.push(chosen.box);
+    label.style.display = "";
     label.setAttribute("x", chosen.cx);
     label.setAttribute("y", chosen.cy);
 
@@ -2020,7 +2045,8 @@ function buildMap() {
       }
     });
     if (crowded.length) {
-      placeLabelsNoOverlap(crowded.map(m => ({ p: { x: m.sx, y: m.sy }, label: m.nameLabel, leader: m.leader })));
+      placeLabelsNoOverlap(crowded.map(m => ({ p: { x: m.sx, y: m.sy }, label: m.nameLabel, leader: m.leader })),
+        { hideOnCollision: true, maxRadius: 15 });
     }
   }
 
