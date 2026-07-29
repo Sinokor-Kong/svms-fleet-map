@@ -589,7 +589,14 @@
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
+    border-radius: 4px;
+    padding: 1px 3px;
+    margin: -1px -3px;
+    transition: background 0.12s ease, color 0.12s ease;
   }
+  /* the name is its own click target (see focusVessel) — underline-on-hover
+     signals that distinctly from the row-level select/deselect click */
+  .fleet-key-item .nm:hover { background: var(--accent-wash); color: var(--accent-hover); text-decoration: underline; }
   .fleet-key-item .no-data-tag {
     flex: none;
     font-size: 9px;
@@ -599,6 +606,10 @@
   }
   .fleet-key-item[aria-pressed="false"] { opacity: 0.4; }
   .fleet-key-item[aria-pressed="false"] .nm { font-weight: 400; }
+  /* focused = this vessel's trail is currently being previewed — independent
+     of aria-pressed (selection/filter state) */
+  .fleet-key-item.focused .nm { background: var(--accent); color: var(--accent-contrast); }
+  .fleet-key-item.focused .nm:hover { background: var(--accent-hover); color: var(--accent-contrast); text-decoration: none; }
   .land-path {
     fill: url(#landGrad);
     stroke: var(--land-border);
@@ -1851,12 +1862,11 @@ function buildMap() {
       g.addEventListener("mouseenter", showTip);
       g.addEventListener("mousemove", positionTip);
       g.addEventListener("mouseleave", hideTip);
-      // clicking a marker on the map focuses on just that vessel (exclusive
-      // select) — the fleet-key chips are for building a multi-vessel filter,
-      // but clicking a ship directly reads as "show me this one", which also
-      // always lands on exactly one selected vessel and so always triggers
-      // its trail animation.
-      g.addEventListener("click", (e) => { e.stopPropagation(); selectOnly(i); });
+      // clicking a marker on the map previews its trail (see focusVessel) —
+      // it no longer collapses the current fleet-key filter down to just this
+      // one vessel, so glancing at a route doesn't disturb whatever else is
+      // currently shown.
+      g.addEventListener("click", (e) => { e.stopPropagation(); focusVessel(i); });
     }
   });
 
@@ -1876,9 +1886,21 @@ function buildMap() {
     item.className = "fleet-key-item";
     item.setAttribute("aria-pressed", "true");
     const { fill, stroke } = markerColors(v);
-    item.innerHTML = `<span class="fleet-dot" style="background:${fill};border-color:${stroke}"></span><span class="nm">${v.name}</span>`
+    const nmTitle = hasPos(v) ? " title=\"클릭하면 이 선박의 최근 경로를 지도에 보여줍니다\"" : "";
+    item.innerHTML = `<span class="fleet-dot" style="background:${fill};border-color:${stroke}"></span><span class="nm"${nmTitle}>${v.name}</span>`
       + (hasPos(v) ? "" : '<span class="no-data-tag">데이터 없음</span>');
+    // the row itself toggles this vessel on/off the map filter (existing
+    // behavior); the name text is its own click target for "show me this
+    // one's route" (focusVessel), decoupled from that filter selection —
+    // clicking a name no longer requires first narrowing the selection down
+    // to exactly one vessel.
     item.addEventListener("click", () => toggleVessel(i));
+    if (hasPos(v)) {
+      item.querySelector(".nm").addEventListener("click", (e) => {
+        e.stopPropagation();
+        focusVessel(i);
+      });
+    }
     fleetKey.appendChild(item);
     fleetKeyButtons[i] = item;
   });
@@ -1979,18 +2001,18 @@ function buildMap() {
     updateNameVisibility();
     buildTable();
     setSubtitle();
-    handleSelectionAnimation();
+    // the focused vessel's marker just got hidden by this filter change —
+    // an animating trail with no visible ship at the end of it reads as
+    // broken, so drop the focus along with it
+    if (playingIdx !== -1 && !selectedIdx.has(playingIdx)) {
+      playingIdx = -1;
+      stopAnimation();
+      updateFocusVisuals();
+    }
   }
 
   function toggleVessel(i) {
     if (selectedIdx.has(i)) selectedIdx.delete(i); else selectedIdx.add(i);
-    applySelection();
-    fitToSelection();
-  }
-
-  function selectOnly(i) {
-    selectedIdx.clear();
-    selectedIdx.add(i);
     applySelection();
     fitToSelection();
   }
@@ -2288,17 +2310,36 @@ function buildMap() {
     zoomLiveTimer = setTimeout(() => frame.classList.remove("zoom-live"), 160);
   }
 
-  function handleSelectionAnimation() {
-    const arr = [...selectedIdx];
-    if (arr.length === 1) {
-      if (arr[0] !== playingIdx) {
-        playingIdx = arr[0];
-        playTrail(arr[0]);
-      }
-    } else {
+  // ── trail focus: deliberately independent of the fleet-key checkboxes,
+  // which exist to filter what's shown on the map/table. Clicking a vessel's
+  // name (sidebar) or its marker (map) sets focus and plays its trail without
+  // touching that filter — clicking the same vessel again clears the focus.
+  // A vessel not currently in the filter gets added to it so its marker is
+  // actually visible for the trail to animate against; nothing else in the
+  // current selection is disturbed.
+  function focusVessel(i) {
+    if (playingIdx === i) {
       playingIdx = -1;
       stopAnimation();
+      updateFocusVisuals();
+      return;
     }
+    if (!selectedIdx.has(i)) {
+      // wasn't visible before — bring it (and only it) into view, same as
+      // fitToSelection() but scoped to this one vessel so the rest of the
+      // current filter/selection isn't reframed along with it
+      selectedIdx.add(i);
+      applySelection();
+      const fv = computeFitView([i]);
+      if (fv) { viewState.k = fv.k; viewState.tx = fv.tx; viewState.ty = fv.ty; applyTransform(); }
+    }
+    playingIdx = i;
+    playTrail(i);
+    updateFocusVisuals();
+  }
+
+  function updateFocusVisuals() {
+    fleetKeyButtons.forEach((btn, idx) => btn.classList.toggle("focused", idx === playingIdx));
   }
 
   function hideTooltip() { tooltip.classList.remove("show"); }
