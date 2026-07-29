@@ -2325,14 +2325,17 @@ function buildMap() {
       return;
     }
     if (!selectedIdx.has(i)) {
-      // wasn't visible before — bring it (and only it) into view, same as
-      // fitToSelection() but scoped to this one vessel so the rest of the
-      // current filter/selection isn't reframed along with it
       selectedIdx.add(i);
       applySelection();
-      const fv = computeFitView([i]);
-      if (fv) { viewState.k = fv.k; viewState.tx = fv.tx; viewState.ty = fv.ty; applyTransform(); }
     }
+    // always frame the view around this vessel (and its recent track) — the
+    // whole point of clicking a name is to actually SEE the route, which a
+    // trail quietly playing somewhere off in a zoomed-out world view doesn't
+    // deliver. Scoped to just this vessel (computeFitView([i])), same as
+    // fitToSelection() but without reframing around the rest of whatever's
+    // currently selected.
+    const fv = computeFitView([i]);
+    if (fv) { viewState.k = fv.k; viewState.tx = fv.tx; viewState.ty = fv.ty; applyTransform(); }
     playingIdx = i;
     playTrail(i);
     updateFocusVisuals();
