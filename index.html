@@ -315,6 +315,15 @@
   }
   .map-frame.panning { cursor: grabbing; }
   svg.map { display: block; width: 100%; height: auto; background: var(--ocean); touch-action: none; }
+  /* SVG has no compositing-layer model of its own by default — without a hint,
+     the browser can end up re-rasterizing the ENTIRE canvas (including this
+     ~55k-point coastline) on every paint, even when only the sibling overlay
+     group (vessel trail animation, marker movement) actually changed that
+     frame. will-change promotes zoomBase to its own cached layer so a static
+     coastline doesn't get redrawn just because something animates next to
+     it — this is what made the trail-playback animation feel sluggish once
+     the coastline resolution went up, independent of any JS-side cost. */
+  #zoomBase { will-change: transform; }
   .map-hint { font-size: 11px; color: var(--text-muted); margin: 8px 0 0; }
   .cursor-coords {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -2127,7 +2136,17 @@ function buildMap() {
   let trailReveal = 0;        // 0..1, how much of the path is currently drawn
   const TRAIL_ANIM_MS = 2200;
 
-  function renderTrail() {
+  // getTotalLength() forces the browser to resolve the path's full geometry —
+  // cheap on its own, but calling it every animation frame (60fps for 2.2s)
+  // adds up, and got noticeably worse once the coastline (a huge sibling
+  // path in the same SVG) grew 16x denser, since some engines don't scope a
+  // layout flush to just the one element being queried. During pure
+  // reveal-animation playback the path's shape (d/totalLength) never
+  // actually changes frame to frame — only the reveal fraction does — so
+  // that work only needs to happen when the geometry itself changes (pan/
+  // zoom, or the trail's initial setup), not on every rAF tick.
+  let trailTotalLength = 0;
+  function renderTrailGeometry() {
     if (!trailWorldPts) return;
     const screenPts = trailWorldPts.map(p => ({
       x: viewState.k * p.x + viewState.tx,
@@ -2135,9 +2154,8 @@ function buildMap() {
     }));
     const d = screenPts.map((p, idx) => `${idx === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
     trailPath.setAttribute("d", d);
-    const totalLength = trailPath.getTotalLength();
-    trailPath.style.strokeDasharray = String(totalLength);
-    trailPath.style.strokeDashoffset = String(totalLength * (1 - trailReveal));
+    trailTotalLength = trailPath.getTotalLength();
+    applyTrailReveal();
 
     [...trailDotsGroup.children].forEach((pt, idx) => {
       const p = screenPts[idx];
@@ -2146,6 +2164,11 @@ function buildMap() {
     });
 
     layoutTrailDateLabels(screenPts);
+  }
+
+  function applyTrailReveal() {
+    trailPath.style.strokeDasharray = String(trailTotalLength);
+    trailPath.style.strokeDashoffset = String(trailTotalLength * (1 - trailReveal));
   }
 
   function layoutTrailDateLabels(screenPts) {
@@ -2197,7 +2220,7 @@ function buildMap() {
     }
     trailPath.style.display = "block";
     trailDotsGroup.style.display = "block";
-    renderTrail();
+    renderTrailGeometry();
 
     // step by distance travelled, not by waypoint count — a land detour adds
     // extra waypoints for what was really a single day's sailing, and without
@@ -2218,7 +2241,7 @@ function buildMap() {
       if (startTs === null) startTs = ts;
       const t = Math.min(1, (ts - startTs) / TRAIL_ANIM_MS);
       trailReveal = t;
-      renderTrail();
+      applyTrailReveal();
 
       const targetDist = t * totalLen;
       let acc = 0, segIdx = 0, frac = 0;
@@ -2258,7 +2281,7 @@ function buildMap() {
     zoomBase.setAttribute("transform", `translate(${viewState.tx},${viewState.ty}) scale(${viewState.k})`);
     overlayItems.forEach(it => it.apply(viewState.k * it.ox + viewState.tx, viewState.k * it.oy + viewState.ty));
     layoutPortLabels();
-    renderTrail();
+    renderTrailGeometry();
     updateNameVisibility();
     frame.classList.add("zoom-live");
     clearTimeout(zoomLiveTimer);
