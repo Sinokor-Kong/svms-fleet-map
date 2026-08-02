@@ -2080,14 +2080,18 @@ function buildMap() {
       }
     });
     if (crowded.length) {
-      // once the user has actually zoomed in well past the default whole-fleet
-      // view, there's real screen space to work with — stop hiding crowded
-      // names outright and let them reach further out via a leader line
-      // instead, so "zooming in on a cluster" reliably reveals every name
-      // rather than leaving some permanently hidden.
-      const zoomedIn = viewState.k > baseFit.k * 2.5;
+      // forcing every crowded name to show regardless of overlap (tried
+      // earlier) just piles text on top of text in a genuinely dense cluster
+      // (e.g. a dozen ships bunched in the Persian Gulf) — worse than hiding.
+      // Instead, keep hideOnCollision on always, but let the search radius
+      // grow with zoom: as the user zooms in, real screen-space between
+      // vessels increases, so a wider radius has room to actually succeed,
+      // progressively revealing more names — while anything that still can't
+      // find a clean spot stays hidden instead of stacking on its neighbors.
+      const zoomRatio = viewState.k / baseFit.k;
+      const maxRadius = Math.min(78, 15 * Math.max(1, zoomRatio / 1.5));
       placeLabelsNoOverlap(crowded.map(m => ({ p: { x: m.sx, y: m.sy }, label: m.nameLabel, leader: m.leader })),
-        zoomedIn ? { hideOnCollision: false } : { hideOnCollision: true, maxRadius: 15 });
+        { hideOnCollision: true, maxRadius });
     }
   }
 
