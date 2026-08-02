@@ -1501,7 +1501,11 @@ function placeLabelsNoOverlap(items, opts) {
   const candidates = opts && opts.maxRadius
     ? LABEL_CANDIDATES.filter(c => c.r <= opts.maxRadius)
     : LABEL_CANDIDATES;
-  const placedBoxes = [];
+  // seed collision boxes with every marker's own position (not just other
+  // labels) — otherwise a label placed to clear its neighbors' text can still
+  // land squarely on top of some OTHER nearby vessel's dot/triangle, hiding
+  // the very thing the map exists to show.
+  const placedBoxes = (opts && opts.avoidPoints) || [];
   const pad = 1.5;
   items.forEach(({ p, label, leader }) => {
     // getBBox() forces an SVG layout pass; every label here has static text
@@ -2090,8 +2094,16 @@ function buildMap() {
       // find a clean spot stays hidden instead of stacking on its neighbors.
       const zoomRatio = viewState.k / baseFit.k;
       const maxRadius = Math.min(78, 15 * Math.max(1, zoomRatio / 1.5));
+      // every visible marker (not just the crowded ones) is a no-go zone for
+      // label placement — otherwise a name nudged clear of its neighbors'
+      // TEXT can still land right on top of some OTHER vessel's dot/triangle.
+      const markerPad = 6;
+      const markerBoxes = visible.map(m => ({
+        left: m.sx - markerPad, right: m.sx + markerPad,
+        top: m.sy - markerPad, bottom: m.sy + markerPad,
+      }));
       placeLabelsNoOverlap(crowded.map(m => ({ p: { x: m.sx, y: m.sy }, label: m.nameLabel, leader: m.leader })),
-        { hideOnCollision: true, maxRadius });
+        { hideOnCollision: true, maxRadius, avoidPoints: markerBoxes });
     }
   }
 
