@@ -845,6 +845,11 @@
             <span class="switch-track" aria-hidden="true"></span>
             <span class="switch-label">Port</span>
           </label>
+          <label class="switch" title="선박명 표시/숨김">
+            <input type="checkbox" id="namesToggleInput" class="switch-input" checked>
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-label">선박명</span>
+          </label>
           <label class="switch" title="다크모드">
             <input type="checkbox" id="themeToggleInput" class="switch-input">
             <span class="switch-track" aria-hidden="true"></span>
@@ -2059,9 +2064,15 @@ function buildMap() {
   // past the world view, or has narrowed the selection down to a handful.
   const NAME_DECLUTTER_COUNT = 10;
   const NAME_ZOOM_GATE = 1.3; // × baseFit.k before names start appearing
+  const namesToggleInput = document.getElementById("namesToggleInput");
+  let namesVisible = namesToggleInput.checked;
+  namesToggleInput.addEventListener("change", () => {
+    namesVisible = namesToggleInput.checked;
+    updateNameVisibility();
+  });
   function updateNameVisibility() {
     const visible = vesselMarkers.filter((m, i) => selectedIdx.has(i) && hasPos(VESSELS[i]));
-    if (visible.length > NAME_DECLUTTER_COUNT && viewState.k < baseFit.k * NAME_ZOOM_GATE) {
+    if (!namesVisible || (visible.length > NAME_DECLUTTER_COUNT && viewState.k < baseFit.k * NAME_ZOOM_GATE)) {
       visible.forEach(m => { m.nameLabel.style.display = "none"; m.leader.style.display = "none"; });
       return;
     }
