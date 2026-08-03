@@ -190,6 +190,11 @@
     flex: none;
   }
   .map-legend-item { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .status-summary {
+    margin-top: 0; padding-top: 0; border-top: none;
+    margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--grid);
+  }
+  .status-summary .count { font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
   .swatch-dot, .swatch-shape {
     width: 10px; height: 10px; border-radius: 50%; flex: none;
     display: inline-block; vertical-align: -1px;
@@ -868,6 +873,8 @@
           </div>
         </div>
       </div>
+
+      <div class="map-legend status-summary" id="statusSummary"></div>
 
       <div class="content-row">
         <div class="sidebar">
@@ -2064,6 +2071,7 @@ function buildMap() {
     updateNameVisibility();
     buildTable();
     setSubtitle();
+    updateStatusSummary();
     // the focused vessel's marker just got hidden by this filter change —
     // an animating trail with no visible ship at the end of it reads as
     // broken, so drop the focus along with it
@@ -2704,6 +2712,35 @@ function setSubtitle() {
   document.getElementById("subtitle").textContent = `SVMS 운항 보고서 기준 · ${countLabel} · ${label}`;
 }
 
+// counts scope to the current selection/filter, same as the subtitle and
+// Table view — reuses conditionCategory() so the buckets always match
+// exactly what each vessel's own map-marker ring color/swatch already shows.
+const CONDITION_LABELS = [
+  ["sailing", "Sailing"], ["anchored", "Anchored"], ["drifting", "Drifting"],
+  ["maneuvering", "Maneuvering"], ["berth", "Berth"], ["unknown", "No data"],
+];
+function updateStatusSummary() {
+  const shown = VESSELS.filter((_, i) => selectedIdx.has(i));
+  const condCounts = Object.fromEntries(CONDITION_LABELS.map(([k]) => [k, 0]));
+  let laden = 0, ballast = 0;
+  shown.forEach(v => {
+    condCounts[conditionCategory(v.condition)]++;
+    if (v.ballast === "Laden") laden++;
+    else if (v.ballast === "Ballast") ballast++;
+  });
+  const condHTML = CONDITION_LABELS
+    .filter(([k]) => condCounts[k] > 0)
+    .map(([k, label]) => `<span class="map-legend-item"><span class="swatch-dot cond-${k}"></span>${label} <span class="count">${condCounts[k]}</span></span>`)
+    .join("");
+  const blHTML = [
+    laden > 0 ? `<span class="map-legend-item"><span class="swatch-shape bl-laden"></span>Laden <span class="count">${laden}</span></span>` : "",
+    ballast > 0 ? `<span class="map-legend-item"><span class="swatch-shape bl-ballast"></span>Ballast <span class="count">${ballast}</span></span>` : "",
+  ].join("");
+  document.getElementById("statusSummary").innerHTML =
+    `<div class="map-legend-group"><span class="map-legend-title">Condition</span>${condHTML}</div>`
+    + `<div class="map-legend-group"><span class="map-legend-title">Ballast / Laden</span>${blHTML}</div>`;
+}
+
 // ── manual dark-mode switch — the page already follows the OS/browser
 // prefers-color-scheme automatically, but the artifact viewer's own theme
 // toggle isn't always easy to find, so this gives direct control regardless.
@@ -2862,6 +2899,7 @@ GROUPS = loadGroups();
 buildMap();
 buildTable();
 setSubtitle();
+updateStatusSummary();
 refreshGroupDropdown();
 
 document.querySelectorAll(".view-toggle button").forEach(btn => {
