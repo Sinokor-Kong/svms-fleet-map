@@ -1847,14 +1847,13 @@ function buildMap() {
         if (Number.isFinite(v.avgSpeed)) badges.push(`<span class="tip-badge">${v.avgSpeed} kn</span>`);
         const badgeRow = badges.length ? `<div class="tip-badges">${badges.join("")}</div>` : "";
 
-        // In Port takes priority over Next Port (a berthed vessel's "next port"
-        // field is typically stale/irrelevant until it departs again), but
-        // ETA/ETB/ETD are independent of which port state resolved — a vessel
-        // can have e.g. only an ETD with neither In Port nor Next Port set.
-        const portLine = v.inPort ? `In Port: ${v.inPort}` : v.nextPort ? `Next Port: ${v.nextPort}` : "";
+        // show In Port and Next Port together whenever both are actually
+        // present, rather than picking just one — a vessel can legitimately
+        // have both set (e.g. shifting between berths within the same port).
+        const portLines = [v.inPort ? `In Port: ${v.inPort}` : null, v.nextPort ? `Next Port: ${v.nextPort}` : null].filter(Boolean);
         const subBits = [v.eta ? `ETA ${v.eta}` : null, v.etb ? `ETB ${v.etb}` : null, v.etd ? `ETD ${v.etd}` : null].filter(Boolean);
-        const scheduleBlock = (portLine || subBits.length)
-          ? `<div class="tip-schedule">${portLine ? `<div>${portLine}</div>` : ""}${subBits.length ? `<div class="tip-sub mono">${subBits.join(" · ")}</div>` : ""}</div>`
+        const scheduleBlock = (portLines.length || subBits.length)
+          ? `<div class="tip-schedule">${portLines.map(l => `<div>${l}</div>`).join("")}${subBits.length ? `<div class="tip-sub mono">${subBits.join(" · ")}</div>` : ""}</div>`
           : "";
 
         const dateBit = v.reportType ? `${v.date} LT · ${v.reportType}` : `${v.date} LT`;
