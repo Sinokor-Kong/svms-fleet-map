@@ -305,6 +305,16 @@
   .view-toggle button[aria-pressed="true"] {
     color: var(--accent-contrast); background: var(--accent); border-color: var(--accent);
   }
+  #measureToggleBtn[aria-pressed="true"] {
+    color: var(--accent-contrast); background: var(--accent); border-color: var(--accent);
+  }
+  .measure-dot { fill: var(--accent); stroke: var(--surface-1); stroke-width: 1.5; }
+  .measure-line { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 3; }
+  .measure-label {
+    fill: var(--text-primary); font-size: 11px; font-weight: 700;
+    text-anchor: middle; paint-order: stroke;
+    stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round;
+  }
   .map-frame {
     position: relative;
     border-radius: 9px;
@@ -859,6 +869,7 @@
         <div class="toolbar-actions">
           <button type="button" id="copyExcelBtn" class="download-btn">⧉ Excel에 붙여넣기용 복사</button>
           <span class="download-status" id="downloadStatus" role="status"></span>
+          <button type="button" id="measureToggleBtn" class="download-btn" aria-pressed="false" title="지도에서 두 점을 클릭해 거리를 잽니다">📏 거리 측정</button>
           <div class="view-toggle" role="group" aria-label="View">
             <button type="button" data-view="map" aria-pressed="true">Map</button>
             <button type="button" data-view="table" aria-pressed="false">Table</button>
@@ -1714,6 +1725,55 @@ function buildMap() {
   overlay.appendChild(trailPath);
   overlay.appendChild(trailDotsGroup);
 
+  // distance measurement tool — click two points on the map (great-circle
+  // nautical miles, matching the kn/avgSpeed units used everywhere else in
+  // this app) — lives in the same constant-scale overlay as the trail so the
+  // line/dots stay screen-accurate across pan/zoom without re-measuring.
+  const measureLine = el("line", { class: "measure-line" });
+  const measureDotA = el("circle", { class: "measure-dot", r: 4 });
+  const measureDotB = el("circle", { class: "measure-dot", r: 4 });
+  const measureLabel = el("text", { class: "measure-label" });
+  [measureLine, measureDotA, measureDotB, measureLabel].forEach(e => { e.style.display = "none"; overlay.appendChild(e); });
+  let measureActive = false;
+  let measurePoints = []; // [{lon, lat}, ...] up to 2
+
+  function haversineNm(a, b) {
+    const R_KM = 6371;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon);
+    const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    return (2 * R_KM * Math.asin(Math.sqrt(h))) / 1.852;
+  }
+
+  function updateMeasureOverlay() {
+    if (!measurePoints.length) {
+      [measureLine, measureDotA, measureDotB, measureLabel].forEach(e => e.style.display = "none");
+      return;
+    }
+    const toScreen = p => ({ x: X(p.lon) * viewState.k + viewState.tx, y: Y(p.lat) * viewState.k + viewState.ty });
+    const sA = toScreen(measurePoints[0]);
+    measureDotA.setAttribute("cx", sA.x); measureDotA.setAttribute("cy", sA.y);
+    measureDotA.style.display = "";
+    if (measurePoints.length === 2) {
+      const sB = toScreen(measurePoints[1]);
+      measureDotB.setAttribute("cx", sB.x); measureDotB.setAttribute("cy", sB.y);
+      measureDotB.style.display = "";
+      measureLine.setAttribute("x1", sA.x); measureLine.setAttribute("y1", sA.y);
+      measureLine.setAttribute("x2", sB.x); measureLine.setAttribute("y2", sB.y);
+      measureLine.style.display = "";
+      const nm = haversineNm(measurePoints[0], measurePoints[1]);
+      measureLabel.textContent = `${nm.toFixed(1)} nm`;
+      measureLabel.setAttribute("x", (sA.x + sB.x) / 2);
+      measureLabel.setAttribute("y", (sA.y + sB.y) / 2 - 8);
+      measureLabel.style.display = "";
+    } else {
+      measureDotB.style.display = "none";
+      measureLine.style.display = "none";
+      measureLabel.style.display = "none";
+    }
+  }
+
   const overlayItems = []; // { ox, oy, apply(sx, sy) }
 
   // reference ports — toggled on/off as a group via the "Port" legend button
@@ -2340,6 +2400,7 @@ function buildMap() {
     overlayItems.forEach(it => it.apply(viewState.k * it.ox + viewState.tx, viewState.k * it.oy + viewState.ty));
     layoutPortLabels();
     renderTrailGeometry();
+    updateMeasureOverlay();
     // label font grows gently as the user zooms in from the default whole-fleet
     // view (more screen space per vessel) and shrinks back at/below it (dense
     // view needs the smallest, least intrusive text) — clamped both ways so it
@@ -2468,6 +2529,29 @@ function buildMap() {
     applyTransform();
   });
   window.addEventListener("mouseup", () => { isPanning = false; frame.classList.remove("panning"); });
+
+  // ── distance measurement: click two points, click a third to start over ──
+  const measureToggleBtn = document.getElementById("measureToggleBtn");
+  function setMeasureActive(active) {
+    measureActive = active;
+    measureToggleBtn.setAttribute("aria-pressed", String(active));
+    measureToggleBtn.textContent = active ? "측정 중 (ESC로 종료)" : "📏 거리 측정";
+    frame.style.cursor = active ? "crosshair" : "";
+    if (!active) { measurePoints = []; updateMeasureOverlay(); }
+  }
+  measureToggleBtn.addEventListener("click", () => setMeasureActive(!measureActive));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && measureActive) setMeasureActive(false);
+  });
+  frame.addEventListener("click", (e) => {
+    if (!measureActive || moved) return;
+    const p = clientToSvg(e.clientX, e.clientY);
+    const { lon, lat } = svgPointToLonLat(p.x, p.y);
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return;
+    if (measurePoints.length >= 2) measurePoints = [];
+    measurePoints.push({ lon, lat });
+    updateMeasureOverlay();
+  });
 
   // ── touch: single-finger drag-pan + two-finger pinch-zoom, mirroring the
   // mouse handlers above. `.map-frame` has touch-action:none (CSS) so the
