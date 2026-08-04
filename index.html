@@ -1571,10 +1571,20 @@ function placeLabelsNoOverlap(items, opts) {
 // A vessel can be in the fleet list before it has ever submitted a DNR
 // report — no lat/lon to plot yet. Every place that draws a map marker or
 // computes a bounding box must skip these rather than propagate NaN.
+const STALE_REPORT_DAYS = 3; // 며칠간 새 보고가 없으면 "데이터 없음"으로 간주할지
+function isReportStale(v) {
+  if (!v.date) return false;
+  const reportTime = new Date(v.date.replace(" ", "T"));
+  if (isNaN(reportTime)) return false;
+  return (Date.now() - reportTime.getTime()) / 86400000 >= STALE_REPORT_DAYS;
+}
 function hasPos(v) {
   // (0,0) is Null Island, not a real fix for this fleet — a blank/unparsed
-  // SVMS report resolves to exactly this rather than a missing value
-  return Number.isFinite(v.lat) && Number.isFinite(v.lon) && !(v.lat === 0 && v.lon === 0);
+  // SVMS report resolves to exactly this rather than a missing value.
+  // A vessel that hasn't filed ANY report in STALE_REPORT_DAYS is treated the
+  // same as having no position at all — an old fix shown as if current would
+  // be actively misleading rather than merely out of date.
+  return Number.isFinite(v.lat) && Number.isFinite(v.lon) && !(v.lat === 0 && v.lon === 0) && !isReportStale(v);
 }
 
 // Normalizes the raw SVMS "Condition" (CNDT) report string — e.g. "BERTH(Disch)" —
@@ -1955,7 +1965,7 @@ function buildMap() {
     item.type = "button";
     item.className = "fleet-key-item";
     item.setAttribute("aria-pressed", "true");
-    const { fill, stroke } = markerColors(v);
+    const { fill, stroke } = markerColors(hasPos(v) ? v : {});
     const nmTitle = hasPos(v) ? " title=\"클릭하면 이 선박의 최근 경로를 지도에 보여줍니다\"" : "";
     item.innerHTML = `<span class="fleet-dot" style="background:${fill};border-color:${stroke}"></span><span class="nm"${nmTitle}>${v.name}</span>`
       + (hasPos(v) ? "" : '<span class="no-data-tag">데이터 없음</span>');
@@ -2694,9 +2704,14 @@ function buildTable() {
         + `<td class="num">${toDMS(v.lon, "E", "W")}</td>`
         + conditionCellHTML(v) + ballastCellHTML(v) + courseCellHTML(v) + scheduleCellsHTML(v) + avgSpeedCellHTML(v);
     } else {
+      // no current position (never reported, or no report in
+      // STALE_REPORT_DAYS) means every OTHER report-derived field is equally
+      // unreliable — show the whole row as unavailable rather than pairing
+      // "no data" position cells with a stale condition/ballast/course that
+      // reads as current.
       tr.innerHTML = `<td class="num">${pos + 1}</td><td>${v.name}</td><td class="num">${v.code}</td>`
         + `<td class="no-data" colspan="4">데이터 없음</td>`
-        + conditionCellHTML(v) + ballastCellHTML(v) + courseCellHTML(v) + scheduleCellsHTML(v) + avgSpeedCellHTML(v);
+        + conditionCellHTML({}) + ballastCellHTML({}) + courseCellHTML({}) + scheduleCellsHTML({}) + avgSpeedCellHTML({});
     }
     tbody.appendChild(tr);
   });
@@ -2724,7 +2739,11 @@ function updateStatusSummary() {
   const condCounts = Object.fromEntries(CONDITION_LABELS.map(([k]) => [k, 0]));
   let laden = 0, ballast = 0;
   shown.forEach(v => {
-    condCounts[conditionCategory(v.condition)]++;
+    // a stale/no-position vessel's old condition/ballast is just as
+    // unreliable as its old lat/lon — bucket it under "No data" instead of
+    // counting a status we no longer actually know is current.
+    condCounts[hasPos(v) ? conditionCategory(v.condition) : "unknown"]++;
+    if (!hasPos(v)) return;
     if (v.ballast === "Laden") laden++;
     else if (v.ballast === "Ballast") ballast++;
   });
@@ -2871,7 +2890,7 @@ function renderGroupEditor() {
       chip.type = "button";
       chip.className = "fleet-key-item";
       chip.setAttribute("aria-pressed", String(g.codes.has(v.code)));
-      const { fill, stroke } = markerColors(v);
+      const { fill, stroke } = markerColors(hasPos(v) ? v : {});
       chip.innerHTML = `<span class="fleet-dot" style="background:${fill};border-color:${stroke}"></span><span class="nm">${v.name}</span>`;
       chip.addEventListener("click", () => {
         if (g.codes.has(v.code)) g.codes.delete(v.code); else g.codes.add(v.code);
