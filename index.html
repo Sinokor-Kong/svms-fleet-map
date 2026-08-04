@@ -1571,7 +1571,7 @@ function placeLabelsNoOverlap(items, opts) {
 // A vessel can be in the fleet list before it has ever submitted a DNR
 // report — no lat/lon to plot yet. Every place that draws a map marker or
 // computes a bounding box must skip these rather than propagate NaN.
-const STALE_REPORT_DAYS = 3; // 며칠간 새 보고가 없으면 "데이터 없음"으로 간주할지
+const STALE_REPORT_DAYS = 4; // 며칠간 새 보고가 없으면 "데이터 없음"으로 간주할지
 function isReportStale(v) {
   if (!v.date) return false;
   const reportTime = new Date(v.date.replace(" ", "T"));
