@@ -2093,9 +2093,14 @@ function buildMap() {
   }
 
   function toggleVessel(i) {
+    // deliberately does NOT refit the view — toggling one vessel on/off is a
+    // "show/hide this ship" filter action, not a "take me to it" navigation.
+    // Snapping the whole map to fit the remaining selection on every single
+    // checkbox click would discard whatever the user had just zoomed/panned
+    // to look at. Bulk actions (전체 선택) still refit, since "show everyone"
+    // is the explicit point of that button.
     if (selectedIdx.has(i)) selectedIdx.delete(i); else selectedIdx.add(i);
     applySelection();
-    fitToSelection();
   }
 
   // with a filter active these apply only to the matching subset, not the
