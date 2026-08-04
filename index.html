@@ -2419,8 +2419,19 @@ function buildMap() {
     // view (more screen space per vessel) and shrinks back at/below it (dense
     // view needs the smallest, least intrusive text) — clamped both ways so it
     // never gets uncomfortably large or vanishes.
+    //
+    // font-size here is set in viewBox units, but the SVG itself is responsive
+    // (width:100%, fixed viewBox) — the same unit count that reads fine on a
+    // ~1200px-wide desktop map renders at a fraction of that in real pixels
+    // once the container is squeezed onto a ~350px phone screen, and no amount
+    // of pinch-zoom fixes it (that only scales map CONTENT via viewState.k,
+    // not the container-to-viewBox ratio). Dividing the desired REAL on-screen
+    // pixel size by that ratio keeps the rendered text a legible physical size
+    // on any device.
+    const cssPxPerUnit = svg.getBoundingClientRect().width / W;
     const zoomRatio = Math.max(0.2, viewState.k / baseFit.k);
-    const labelSize = Math.min(9, Math.max(6, 7 + 1.8 * Math.log2(zoomRatio)));
+    const desiredCssPx = Math.min(11, Math.max(7, 8 + 1.8 * Math.log2(zoomRatio)));
+    const labelSize = cssPxPerUnit > 0 ? desiredCssPx / cssPxPerUnit : desiredCssPx;
     overlay.style.setProperty("--vessel-label-size", labelSize.toFixed(2) + "px");
     updateNameVisibility();
     frame.classList.add("zoom-live");
@@ -2543,6 +2554,13 @@ function buildMap() {
     applyTransform();
   });
   window.addEventListener("mouseup", () => { isPanning = false; frame.classList.remove("panning"); });
+
+  // rotating a phone or resizing the window changes the container's real CSS
+  // width without any pan/zoom happening — re-run applyTransform so the
+  // device-pixel label-size compensation (see applyTransform) picks up the
+  // new container-to-viewBox ratio immediately rather than on the next
+  // interaction.
+  window.addEventListener("resize", applyTransform);
 
   // ── distance measurement: click two points, click a third to start over ──
   const measureToggleBtn = document.getElementById("measureToggleBtn");
