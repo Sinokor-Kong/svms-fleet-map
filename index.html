@@ -888,6 +888,7 @@
             <button type="button" data-view="map" aria-pressed="true">Map</button>
             <button type="button" data-view="table" aria-pressed="false">Table</button>
             <button type="button" data-view="group" aria-pressed="false">Group</button>
+            <button type="button" data-view="soh" aria-pressed="false">SOH</button>
           </div>
         </div>
       </div>
@@ -964,6 +965,19 @@
         <table class="data-table" id="dataTable">
           <thead>
             <tr><th>#</th><th>Vessel</th><th>Code</th><th>Last Report (LT)</th><th>Report Type</th><th>Latitude</th><th>Longitude</th><th>Condition</th><th>Ballast/Laden</th><th>Course</th><th>In Port</th><th>Next Port</th><th>ETA</th><th>ETB</th><th>ETD</th><th>Avg Speed</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="sohWrap" style="display:none;">
+        <div class="group-editor-toolbar">
+          <span class="select-hint" id="sohSummary">호르무즈 해협(Strait of Hormuz) 통항 완료 자동 기록 — SVMS 위경도 기준 근사 판정</span>
+          <input type="text" id="sohSearchInput" class="fleet-search" placeholder="선박명 검색" autocomplete="off" style="max-width:200px;">
+        </div>
+        <table class="data-table" id="sohTable">
+          <thead>
+            <tr><th>#</th><th>Date</th><th>Vessel</th><th>Direction</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -1087,6 +1101,11 @@ const VESSELS = [
   { name: "OCEAN LOYALTY", code: "ONLT", condition: "BERTH(Load)", ballast: "Laden", course: 350, reportType: "NOON (IN PORT)", inPort: "FUJAIRAH, UNITED ARAB EMIRATES", nextPort: null, eta: null, etb: null, etd: null, avgSpeed: null, date: "2026-08-08 12:00", lat: 25.1667, lon: 56.55, track: [{date:"2026-07-27",lat:25.1667,lon:56.55}, {date:"2026-07-28",lat:25.1667,lon:56.55}, {date:"2026-07-29",lat:25.1667,lon:56.55}, {date:"2026-07-30",lat:25.05,lon:56.8167}, {date:"2026-07-31",lat:25.1667,lon:56.8667}, {date:"2026-08-01",lat:25.3167,lon:56.9}, {date:"2026-08-02",lat:25.4333,lon:56.85}, {date:"2026-08-03",lat:25.3,lon:56.7833}, {date:"2026-08-04",lat:25.1333,lon:56.5833}, {date:"2026-08-05",lat:25.1667,lon:56.55}, {date:"2026-08-06",lat:25.1667,lon:56.55}, {date:"2026-08-07",lat:25.1667,lon:56.55}, {date:"2026-08-08",lat:25.1667,lon:56.55}] },
   { name: "SINGAPORE PROSPERITY", code: "SGPS", condition: "ANCHORED", ballast: "Ballast", course: 138, reportType: "NOON (IN PORT)", inPort: "FUJAIRAH, UNITED ARAB EMIRATES", nextPort: null, eta: null, etb: null, etd: "2026-08-10 12:00", avgSpeed: 0, date: "2026-08-08 12:00", lat: 25.1883, lon: 56.5733, track: [{date:"2026-07-27",lat:25.175,lon:56.5517}, {date:"2026-07-28",lat:25.165,lon:56.5583}, {date:"2026-07-29",lat:25.1967,lon:56.575}, {date:"2026-07-30",lat:25.1967,lon:56.575}, {date:"2026-07-31",lat:25.1817,lon:56.575}, {date:"2026-08-01",lat:25.1817,lon:56.575}, {date:"2026-08-02",lat:25.1817,lon:56.575}, {date:"2026-08-03",lat:25.1817,lon:56.575}, {date:"2026-08-04",lat:25.1817,lon:56.575}, {date:"2026-08-05",lat:25.1883,lon:56.5733}, {date:"2026-08-06",lat:25.19,lon:56.5733}, {date:"2026-08-07",lat:25.1867,lon:56.5733}, {date:"2026-08-08",lat:25.1883,lon:56.5733}] },
   { name: "TUNISIA PROSPERITY", code: "TSPS", condition: "ANCHORED", ballast: "Laden", course: 228, reportType: "NOON (IN PORT)", inPort: "MUAR, MALAYSIA", nextPort: null, eta: null, etb: null, etd: null, avgSpeed: 0, date: "2026-08-08 12:00", lat: 1.9867, lon: 102.41, track: [{date:"2026-07-27",lat:5.8583,lon:85.9333}, {date:"2026-07-28",lat:6.1,lon:90.255}, {date:"2026-07-29",lat:6.31,lon:94.2467}, {date:"2026-07-30",lat:5.3817,lon:98.08}, {date:"2026-07-31",lat:3.12,lon:100.53}, {date:"2026-08-01",lat:1.9833,lon:102.4133}, {date:"2026-08-02",lat:1.9833,lon:102.4133}, {date:"2026-08-03",lat:1.9817,lon:102.415}, {date:"2026-08-04",lat:1.9833,lon:102.415}, {date:"2026-08-05",lat:1.9817,lon:102.415}, {date:"2026-08-06",lat:1.9833,lon:102.4133}, {date:"2026-08-07",lat:1.9867,lon:102.4133}, {date:"2026-08-08",lat:1.9867,lon:102.41}] },
+];
+
+// 호르무즈 해협(SOH) 통항 완료 자동 기록 — auto_update.py가 매 실행마다
+// SOH Transit\soh_transit_log.csv 전체 내용으로 이 배열을 재생성함 (날짜 오름차순 누적, 덮어쓰기 아님)
+const SOH_TRANSIT_LOG = [
 ];
 
 // 주요 항구 (배 데이터가 아님 — 화면에 고정된 지리적 기준점, 지도 위 토글로 표시/숨김 가능)
@@ -2811,6 +2830,25 @@ function buildTable() {
   });
 }
 
+function buildSohTable(filter) {
+  const tbody = document.querySelector("#sohTable tbody");
+  tbody.innerHTML = "";
+  const q = (filter || "").trim().toUpperCase();
+  // newest-first; SOH_TRANSIT_LOG itself is stored oldest-first (append-only log)
+  const rows = [...SOH_TRANSIT_LOG].reverse()
+    .filter(r => !q || r.vessel.toUpperCase().includes(q));
+  rows.forEach((r, pos) => {
+    const tr = document.createElement("tr");
+    const dirClass = r.direction.startsWith("WESTBOUND") ? "cond-sailing" : "cond-anchored";
+    tr.innerHTML = `<td class="num">${rows.length - pos}</td><td class="num">${r.date}</td><td>${r.vessel}</td>`
+      + `<td><span class="swatch-dot ${dirClass}"></span>${r.direction}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById("sohSummary").textContent =
+    `호르무즈 해협(Strait of Hormuz) 통항 완료 자동 기록 — 총 ${SOH_TRANSIT_LOG.length}건 (SVMS 위경도 기준 근사 판정)`;
+}
+document.getElementById("sohSearchInput").addEventListener("input", (e) => buildSohTable(e.target.value));
+
 function setSubtitle() {
   const shown = VESSELS.filter((_, i) => selectedIdx.has(i));
   const dates = [...new Set(shown.filter(hasPos).map(v => v.date.split(" ")[0]))];
@@ -3011,6 +3049,7 @@ GROUPS = loadGroups();
 
 buildMap();
 buildTable();
+buildSohTable();
 setSubtitle();
 updateStatusSummary();
 refreshGroupDropdown();
@@ -3024,6 +3063,7 @@ document.querySelectorAll(".view-toggle button").forEach(btn => {
     document.querySelector(".map-hint").style.display = view === "map" ? "block" : "none";
     document.getElementById("tableWrap").style.display = view === "table" ? "block" : "none";
     document.getElementById("groupWrap").style.display = view === "group" ? "block" : "none";
+    document.getElementById("sohWrap").style.display = view === "soh" ? "block" : "none";
     if (view === "group") renderGroupEditor();
   });
 });
