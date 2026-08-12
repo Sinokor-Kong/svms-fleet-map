@@ -693,6 +693,11 @@
     cursor: pointer;
   }
   .vessel-dot:hover, .vessel-dot.hi { filter: brightness(1.1); }
+  /* stale/"데이터 없음" vessel shown at its last known position — dashed ring +
+     reduced opacity so it reads as "last known, not current" at a glance,
+     distinct from a normal marker even though both may share the same
+     neutral cond-unknown grey fill/stroke from markerColors({}) */
+  .vessel-dot-stale { opacity: 0.55; stroke-dasharray: 1.5 1; }
   /* Course(선수방향) 값이 있는 선박은 원 대신 이 삼각형으로 표시 — 꼭짓점이
      항상 북쪽(위)을 기본으로 그려진 뒤, 감싸는 <g>에서 course만큼 시계방향
      회전시켜 실제 선수방향을 가리키게 한다 (지도가 북쪽=위 방향이므로 SVG의
@@ -1806,6 +1811,13 @@ function hasPos(v) {
   // be actively misleading rather than merely out of date.
   return Number.isFinite(v.lat) && Number.isFinite(v.lon) && !(v.lat === 0 && v.lon === 0) && !isReportStale(v);
 }
+// true if we have ANY coordinate on record, fresh or stale — used to decide
+// whether the map should still plot a "last known position" marker for a
+// vessel currently classified "데이터 없음" for staleness (as opposed to one
+// that has genuinely never filed a report at all, which has no lat/lon to plot)
+function hasAnyPos(v) {
+  return Number.isFinite(v.lat) && Number.isFinite(v.lon) && !(v.lat === 0 && v.lon === 0);
+}
 
 // Normalizes the raw SVMS "Condition" (CNDT) report string — e.g. "BERTH(Disch)" —
 // down to one of the 6 categories the map/legend color-code against.
@@ -2082,6 +2094,11 @@ function buildMap() {
   });
   VESSELS.forEach((v, i) => {
     const posOk = hasPos(v);
+    // a vessel whose last report is stale (>=STALE_REPORT_DAYS) still has a
+    // real lat/lon on file — show it there, just visually marked as
+    // "last known" rather than dropping the marker entirely like a vessel
+    // that has never reported at all (which has no coordinate to fall back to)
+    const plotPos = hasAnyPos(v);
     const g = el("g", { style: "cursor:pointer" });
     // Only underway conditions (Sailing/Drifting) get an isosceles-triangle
     // heading marker (apex = bow) — a berthed/anchored vessel's Course field
@@ -2089,9 +2106,11 @@ function buildMap() {
     // raw report happens to carry a Course number. The triangle is drawn
     // pointing north in its own local coords and rotated to the true course
     // by the wrapping <g>'s transform, rather than baking it into "d".
+    // A stale reading's own course value is equally unreliable, so it never
+    // gets the heading triangle either — plain circle only.
     const cat = conditionCategory(v.condition);
     const hasCourseValue = Number.isFinite(v.course);
-    const showHeading = (cat === "sailing" || cat === "drifting" || cat === "maneuvering") && hasCourseValue;
+    const showHeading = posOk && (cat === "sailing" || cat === "drifting" || cat === "maneuvering") && hasCourseValue;
     const dotWrap = el("g", { class: "vessel-dot-wrap" });
     const dot = showHeading
       ? el("path", { class: "vessel-dot vessel-dot-tri", d: "M 0 -4.6 L 3 3.5 L -3 3.5 Z" })
@@ -2099,10 +2118,14 @@ function buildMap() {
     // Condition (hue) and Ballast/Laden (fill-vs-hollow) are deliberately two
     // independent encodings on the same marker, per spec — never merge them
     // into one color scale or the two legends stop being distinguishable.
-    const { fill, stroke } = markerColors(v);
+    // A stale/no-data vessel instead gets the neutral cond-unknown grey (same
+    // color already used for its sidebar chip) plus a dashed, dimmed ring so
+    // it never reads as an equally-trustworthy current position.
+    const { fill, stroke } = markerColors(posOk ? v : {});
     dot.style.fill = fill;
     dot.style.stroke = stroke;
     dot.style.strokeWidth = "1.2";
+    if (plotPos && !posOk) dot.classList.add("vessel-dot-stale");
     dotWrap.appendChild(dot);
     const nameLabel = el("text", { class: "vessel-label" });
     nameLabel.textContent = v.name;
@@ -2115,13 +2138,13 @@ function buildMap() {
     g.appendChild(leader);
     g.appendChild(dotWrap);
     g.appendChild(nameLabel);
-    // a vessel with no reported position yet gets no map marker at all —
-    // the element still exists (so every other index-aligned array below
-    // stays in sync) but is simply never attached to the visible overlay
-    if (posOk) overlay.appendChild(g);
+    // a vessel with no coordinate on record at all (never reported) gets no
+    // map marker — the element still exists (so every other index-aligned
+    // array below stays in sync) but is simply never attached to the overlay
+    if (plotPos) overlay.appendChild(g);
 
     const marker = {
-      g, nameLabel, leader, ox: posOk ? X(v.lon) : 0, oy: posOk ? Y(v.lat) : 0, sx: 0, sy: 0,
+      g, nameLabel, leader, ox: plotPos ? X(v.lon) : 0, oy: plotPos ? Y(v.lat) : 0, sx: 0, sy: 0,
       apply(sx, sy) {
         this.sx = sx; this.sy = sy;
         const rot = showHeading ? ` rotate(${v.course})` : "";
@@ -2131,15 +2154,33 @@ function buildMap() {
         nameLabel.setAttribute("x", sx + 6); nameLabel.setAttribute("y", sy + 3);
       },
     };
-    if (posOk) overlayItems.push(marker);
+    if (plotPos) overlayItems.push(marker);
     vesselMarkers.push(marker);
 
-    if (posOk) {
+    if (plotPos) {
       const showTip = () => {
         clearTimeout(tooltipHideTimer);
         dot.classList.add("hi");
         const latTxt = toDMS(v.lat, "N", "S");
         const lonTxt = toDMS(v.lon, "E", "W");
+        const extra = PARTICULARS_BY_CODE[v.code] || {};
+        if (!posOk) {
+          // stale marker: last known position only, no live status - keep
+          // the tooltip minimal rather than pairing it with condition/ballast/
+          // ETA fields that are just as unreliable as the position itself
+          const bltY = (extra.delivery || '').slice(0, 4);
+          const headBits = [v.name, bltY, smLabel(extra.shipManager), extra.techPic].filter(Boolean);
+          const tipHead = headBits.map((t, idx) =>
+            idx === 0 ? `<span class="tip-name">${t}</span>` : `<span class="tip-code">${t}</span>`
+          ).join("");
+          tooltip.innerHTML = `<div class="tip-head">${tipHead}</div>`
+            + `<div class="tip-meta"><span class="no-data-tag">데이터 없음 (마지막 리포트 ${v.date || "없음"})</span></div>`
+            + `<div class="tip-meta"><span class="mono">${latTxt}, ${lonTxt}</span><span class="mono">${v.code}</span></div>`
+            + `<a class="tip-reg-link" href="#" onclick="event.preventDefault(); openParticulars('${v.code}');">제원 보기 →</a>`;
+          positionTip();
+          tooltip.classList.add("show");
+          return;
+        }
         // status badges reuse the exact same swatch icons as the map/legend/table
         // (swatch-dot for Condition's ring, swatch-shape for Ballast/Laden's fill,
         // a condition-colored triangle for Course) so the tooltip reads as the
@@ -2162,7 +2203,6 @@ function buildMap() {
 
         const dateBit = v.reportType ? `${v.date} LT · ${v.reportType}` : `${v.date} LT`;
         // 선명 -> BLT -> 관리사 -> 담당 감독 순으로 첫 줄에 표시 (제원 데이터 병합)
-        const extra = PARTICULARS_BY_CODE[v.code] || {};
         const bltY = (extra.delivery || '').slice(0, 4);
         const headBits = [v.name, bltY, smLabel(extra.shipManager), extra.techPic].filter(Boolean);
         const tipHead = headBits.map((t, idx) =>
@@ -2405,7 +2445,7 @@ function buildMap() {
     updateNameVisibility();
   });
   function updateNameVisibility() {
-    const visible = vesselMarkers.filter((m, i) => selectedIdx.has(i) && hasPos(VESSELS[i]));
+    const visible = vesselMarkers.filter((m, i) => selectedIdx.has(i) && hasAnyPos(VESSELS[i]));
     if (!namesVisible || (visible.length > NAME_DECLUTTER_COUNT && viewState.k < baseFit.k * NAME_ZOOM_GATE)) {
       visible.forEach(m => { m.nameLabel.style.display = "none"; m.leader.style.display = "none"; });
       return;
