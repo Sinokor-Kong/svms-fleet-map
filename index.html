@@ -799,7 +799,7 @@
   }
   .tip-schedule .tip-sub { opacity: 0.7; font-size: 10.5px; }
 
-  #tableWrap { overflow-x: auto; }
+  #tableWrap, #noonWrap { overflow-x: auto; }
   table.data-table {
     width: 100%;
     min-width: 900px;
@@ -964,6 +964,7 @@
           <button type="button" id="measureToggleBtn" class="download-btn" aria-pressed="false" title="지도에서 두 점을 클릭해 거리를 잽니다">📏 거리 측정</button>
           <div class="view-toggle" role="group" aria-label="View">
             <button type="button" data-view="map" aria-pressed="true">Map</button>
+            <button type="button" data-view="noon" aria-pressed="false">Noon Report</button>
             <button type="button" data-view="table" aria-pressed="false">Vessel</button>
             <button type="button" data-view="group" aria-pressed="false">Group</button>
             <button type="button" data-view="soh" aria-pressed="false">SOH</button>
@@ -1038,6 +1039,15 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div id="noonWrap" style="display:none;">
+        <table class="data-table" id="noonTable">
+          <thead>
+            <tr><th>#</th><th>Vessel</th><th>Code</th><th>Last Report (LT)</th><th>Report Type</th><th>Latitude</th><th>Longitude</th><th>Condition</th><th>Ballast/Laden</th><th>Course</th><th>In Port</th><th>Next Port</th><th>ETA</th><th>ETB</th><th>ETD</th><th>Avg Speed</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
 
       <div id="tableWrap" style="display:none;">
@@ -2330,6 +2340,7 @@ function buildMap() {
       fleetKeyButtons[i].setAttribute("aria-pressed", String(on));
     });
     updateNameVisibility();
+    buildNoonTable();
     setSubtitle();
     updateStatusSummary();
     // the focused vessel's marker just got hidden by this filter change —
@@ -3142,6 +3153,68 @@ function openParticulars(code){
 
 ptRenderAll();
 
+// ── Noon Report (운항 데이터) — SVMS 운항 보고서 기준 위치/상태 표, Vessel(제원) 탭과
+// 별개로 유지: 제원은 정적 스펙(건조년도/관리사 등), 이건 매 업데이트마다 바뀌는 운항 데이터
+function conditionCellHTML(v) {
+  if (!v.condition) return `<td class="no-data">데이터 없음</td>`;
+  const cat = conditionCategory(v.condition);
+  return `<td class="num"><span class="swatch-dot table-swatch cond-${cat}"></span>${v.condition}</td>`;
+}
+function ballastCellHTML(v) {
+  if (!v.ballast) return `<td class="no-data">데이터 없음</td>`;
+  const shapeCls = v.ballast === "Ballast" ? "bl-ballast" : "bl-laden";
+  return `<td class="num"><span class="swatch-shape table-swatch ${shapeCls}"></span>${v.ballast}</td>`;
+}
+function courseCellHTML(v) {
+  if (!Number.isFinite(v.course)) return `<td class="no-data">데이터 없음</td>`;
+  const cat = conditionCategory(v.condition);
+  const swatch = (cat === "sailing" || cat === "drifting" || cat === "maneuvering")
+    ? `<span class="swatch-tri table-swatch"></span>`
+    : `<span class="swatch-circle-neutral table-swatch"></span>`;
+  return `<td class="num">${swatch}${v.course}°</td>`;
+}
+function textCellHTML(val) {
+  return val ? `<td class="num">${val}</td>` : `<td class="no-data">데이터 없음</td>`;
+}
+function scheduleCellsHTML(v) {
+  return textCellHTML(v.inPort) + textCellHTML(v.nextPort)
+    + textCellHTML(v.eta) + textCellHTML(v.etb) + textCellHTML(v.etd);
+}
+function avgSpeedCellHTML(v) {
+  return Number.isFinite(v.avgSpeed) ? `<td class="num">${v.avgSpeed} kn</td>` : `<td class="no-data">데이터 없음</td>`;
+}
+
+function buildNoonTable() {
+  const tbody = document.querySelector("#noonTable tbody");
+  tbody.innerHTML = "";
+  // listed alphabetically (matching the sidebar/group list convention) — "#"
+  // renumbers 1..N by that visible order, not the vessel's VESSELS array index.
+  const order = VESSELS.map((_, i) => i)
+    .filter(i => selectedIdx.has(i))
+    .sort((a, b) => VESSELS[a].name.localeCompare(VESSELS[b].name));
+  order.forEach((i, pos) => {
+    const v = VESSELS[i];
+    const tr = document.createElement("tr");
+    if (hasPos(v)) {
+      tr.innerHTML = `<td class="num">${pos + 1}</td><td>${v.name}</td><td class="num">${v.code}</td><td class="num">${v.date}</td>`
+        + `<td class="num">${v.reportType || ""}</td>`
+        + `<td class="num">${toDMS(v.lat, "N", "S")}</td>`
+        + `<td class="num">${toDMS(v.lon, "E", "W")}</td>`
+        + conditionCellHTML(v) + ballastCellHTML(v) + courseCellHTML(v) + scheduleCellsHTML(v) + avgSpeedCellHTML(v);
+    } else {
+      // no current position (never reported, or no report in
+      // STALE_REPORT_DAYS) means every OTHER report-derived field is equally
+      // unreliable — show the whole row as unavailable rather than pairing
+      // "no data" position cells with a stale condition/ballast/course that
+      // reads as current.
+      tr.innerHTML = `<td class="num">${pos + 1}</td><td>${v.name}</td><td class="num">${v.code}</td>`
+        + `<td class="no-data" colspan="4">데이터 없음</td>`
+        + conditionCellHTML({}) + ballastCellHTML({}) + courseCellHTML({}) + scheduleCellsHTML({}) + avgSpeedCellHTML({});
+    }
+    tbody.appendChild(tr);
+  });
+}
+
 function buildSohTable(filter) {
   const tbody = document.querySelector("#sohTable tbody");
   tbody.innerHTML = "";
@@ -3152,8 +3225,11 @@ function buildSohTable(filter) {
   rows.forEach((r, pos) => {
     const tr = document.createElement("tr");
     const dirClass = r.direction.startsWith("WESTBOUND") ? "cond-sailing" : "cond-anchored";
+    // 저장된 값은 WESTBOUND/EASTBOUND 그대로 두고(SOH 로그·중복확인 키 안정성),
+    // 화면 표시만 INBOUND(입항)/OUTBOUND(출항)로 바꿔 보여준다
+    const dirLabel = r.direction.replace("WESTBOUND", "INBOUND").replace("EASTBOUND", "OUTBOUND");
     tr.innerHTML = `<td class="num">${rows.length - pos}</td><td class="num">${r.date}</td><td>${r.vessel}</td>`
-      + `<td><span class="swatch-dot ${dirClass}"></span>${r.direction}</td>`;
+      + `<td><span class="swatch-dot ${dirClass}"></span>${dirLabel}</td>`;
     tbody.appendChild(tr);
   });
   document.getElementById("sohSummary").textContent =
@@ -3409,6 +3485,7 @@ document.getElementById("addGroupBtn").addEventListener("click", () => {
 GROUPS = loadGroups();
 
 buildMap();
+buildNoonTable();
 buildSohTable();
 buildTrendChart();
 setSubtitle();
@@ -3422,6 +3499,7 @@ document.querySelectorAll(".view-toggle button").forEach(btn => {
     const view = btn.dataset.view;
     document.querySelector(".content-row").style.display = view === "map" ? "flex" : "none";
     document.querySelector(".map-hint").style.display = view === "map" ? "block" : "none";
+    document.getElementById("noonWrap").style.display = view === "noon" ? "block" : "none";
     document.getElementById("tableWrap").style.display = view === "table" ? "block" : "none";
     document.getElementById("groupWrap").style.display = view === "group" ? "block" : "none";
     document.getElementById("sohWrap").style.display = view === "soh" ? "block" : "none";
