@@ -2261,7 +2261,11 @@ function buildMap() {
     item.className = "fleet-key-item";
     item.setAttribute("aria-pressed", "true");
     const { fill, stroke } = markerColors(hasPos(v) ? v : {});
-    const nmTitle = hasPos(v) ? " title=\"클릭하면 이 선박의 최근 경로를 지도에 보여줍니다\"" : "";
+    // a stale vessel still has a last-known position to jump to, so its name
+    // gets the same click-to-focus behavior as a current one — only a vessel
+    // with literally no coordinate on record (never reported) has nothing to focus
+    const canFocus = hasAnyPos(v);
+    const nmTitle = canFocus ? " title=\"클릭하면 이 선박의 최근 경로를 지도에 보여줍니다\"" : "";
     item.innerHTML = `<span class="fleet-dot" style="background:${fill};border-color:${stroke}"></span><span class="nm"${nmTitle}>${v.name}</span>`
       + `<a class="reg-link" href="#" title="제원 검색에서 보기">⌖</a>`
       + (hasPos(v) ? "" : '<span class="no-data-tag">데이터 없음</span>');
@@ -2276,7 +2280,7 @@ function buildMap() {
     // clicking a name no longer requires first narrowing the selection down
     // to exactly one vessel.
     item.addEventListener("click", () => toggleVessel(i));
-    if (hasPos(v)) {
+    if (canFocus) {
       item.querySelector(".nm").addEventListener("click", (e) => {
         e.stopPropagation();
         focusVessel(i);
@@ -2506,9 +2510,10 @@ function buildMap() {
   const frameCx = margin.left + plotW / 2, frameCy = margin.top + plotH / 2;
 
   function computeFitView(indices) {
-    // vessels with no reported position yet can't contribute to a bounding
-    // box — if that's all that's selected, leave the view as it is
-    const posIndices = indices.filter(i => hasPos(VESSELS[i]));
+    // vessels with no coordinate on record at all can't contribute to a
+    // bounding box — but a stale/"데이터 없음" vessel still has a last-known
+    // lat/lon and should be framed just like a current one
+    const posIndices = indices.filter(i => hasAnyPos(VESSELS[i]));
     if (!posIndices.length) return null;
     // when framing a single vessel, include its recent track so the whole
     // played-back route stays in view, not just its current point
