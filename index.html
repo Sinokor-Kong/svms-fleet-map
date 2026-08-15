@@ -1133,6 +1133,10 @@ document.addEventListener("gesturestart", (e) => e.preventDefault());
 // ── 자동 표기용 데이터: 이 배열만 갱신하면 지도가 자동으로 다시 그려집니다 ──
 
 // 관리사 약어 매핑 (선박 제원 검색 아티팩트와 동일한 기준)
+// auto_update.py가 매 실행 성공 시(git 커밋 직전) 이 값을 갱신함 — 아티팩트만 봐도
+// 데이터가 언제 마지막으로 자동 갱신됐는지 바로 식별 가능하도록 부제목에 표시
+const LAST_UPDATED = "2026-08-15 12:23";
+
 const SM_ABBR = {
   'FLEET': 'FML', 'COLUMBIA': 'CSM', '이그제큐티브 쉽 매니지먼트': 'ESM', 'SYNERGY': 'SYNERGY',
   'THOME': 'OSM-THOME', 'OSM SHIP MANAGEMENT AS': 'OSM-THOME', 'V.SHIPS NORWAY': 'VSN',
@@ -3276,7 +3280,7 @@ function buildSohTable(filter) {
     const dirClass = r.direction.startsWith("WESTBOUND") ? "cond-sailing" : "cond-anchored";
     // 저장된 값은 WESTBOUND/EASTBOUND 그대로 두고(SOH 로그·중복확인 키 안정성),
     // 화면 표시만 INBOUND(입항)/OUTBOUND(출항)로 바꿔 보여준다
-    const dirLabel = r.direction.replace("WESTBOUND", "INBOUND").replace("EASTBOUND", "OUTBOUND");
+    const dirLabel = r.direction.startsWith("WESTBOUND") ? "INBOUND" : "OUTBOUND";
     tr.innerHTML = `<td class="num">${rows.length - pos}</td><td class="num">${r.date}</td><td>${r.vessel}</td>`
       + `<td><span class="swatch-dot ${dirClass}"></span>${dirLabel}</td>`;
     tbody.appendChild(tr);
@@ -3342,7 +3346,7 @@ function setSubtitle() {
   const countLabel = shown.length === VESSELS.length
     ? `선박 ${VESSELS.length}척`
     : `${VESSELS.length}척 중 ${shown.length}척 선택`;
-  document.getElementById("subtitle").textContent = `SVMS 운항 보고서 기준 · ${countLabel} · ${label}`;
+  document.getElementById("subtitle").textContent = `SVMS 운항 보고서 기준 · ${countLabel} · ${label} · 마지막 자동 갱신 ${LAST_UPDATED}`;
 }
 
 // counts scope to the current selection/filter, same as the subtitle and
