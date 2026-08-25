@@ -1071,6 +1071,7 @@
             </div>
             <div class="pt-filter-group pt-select-group">
               <select class="pt-select" id="ptOwnerSelect"></select>
+              <select class="pt-select" id="ptTeamSelect"></select>
               <select class="pt-select" id="ptClassSelect"></select>
               <select class="pt-select" id="ptShipManagerSelect"></select>
               <select class="pt-select" id="ptTechPicSelect"></select>
@@ -1145,6 +1146,14 @@ const SM_ABBR = {
   'OMAN SAOC': 'OMS', 'V.SHIPS GERMANY': 'VSG',
 };
 function smLabel(s){ return (s && SM_ABBR[s]) || s || ''; }
+
+// SVMS PIC팀(TEAM_ID) 약어 매핑 — 관리사와 마찬가지로 원본 라벨이 길어서 짧게 표기
+const TEAM_ABBR = {
+  '[TRMT] Tanker Ship Management Team 1': '1팀',
+  '[TRMT2] Tanker Ship Management Team 2': '2팀',
+  '[TRMT3] Tanker Ship Management Team 3': '3팀',
+};
+function teamLabel(s){ return (s && TEAM_ABBR[s]) || s || ''; }
 
 // 선박 제원 검색 아티팩트와 동일한 전체 제원 데이터 — 지도 자체 데이터(운항보고서)에는
 // 없는 정보(치수/톤수/관리사/담당감독/BLT 등)를 코드 기준으로 조회해 쓴다.
@@ -3072,6 +3081,7 @@ const PT_COLUMNS = [
 let ptQuery = '';
 let ptActiveSizes = new Set();
 let ptSelectedOwner = '';
+let ptSelectedTeam = '';
 let ptSelectedClass = '';
 let ptSelectedShipManager = '';
 let ptSelectedTechPic = '';
@@ -3093,6 +3103,7 @@ const PT_SIZE_FILTER_HIDDEN = new Set(['MOSS','MEMBRANE']);
 const { counts: ptSizeCounts, list: ptSizeListAll } = ptBuildFilterList('size', { order: ['VLCC','AFRAMAX','LR2','LR1','MR','GP','CAPE'] });
 const ptSizeList = ptSizeListAll.filter(s => !PT_SIZE_FILTER_HIDDEN.has(s));
 const { counts: ptOwnerCounts, list: ptOwnerList } = ptBuildFilterList('owner', { normalize: ptOrBlank });
+const { counts: ptTeamCounts, list: ptTeamList } = ptBuildFilterList('ownerPic', { normalize: v => teamLabel(ptOrBlank(v)) });
 const { counts: ptClassCounts, list: ptClassList } = ptBuildFilterList('classMain', { normalize: ptOrBlank });
 const { counts: ptShipManagerCounts, list: ptShipManagerList } = ptBuildFilterList('shipManager', { normalize: v => smLabel(ptOrBlank(v)) });
 const { counts: ptTechPicCounts, list: ptTechPicList } = ptBuildFilterList('techPic', { normalize: ptOrBlank });
@@ -3142,6 +3153,7 @@ function ptFilteredSorted(){
   let list = PT_VESSELS.filter(v =>
     (ptActiveSizes.size===0 || ptActiveSizes.has(v.size)) &&
     (!ptSelectedOwner || ptOrBlank(v.owner)===ptSelectedOwner) &&
+    (!ptSelectedTeam || teamLabel(ptOrBlank(v.ownerPic))===ptSelectedTeam) &&
     (!ptSelectedClass || ptOrBlank(v.classMain)===ptSelectedClass) &&
     (!ptSelectedShipManager || smLabel(ptOrBlank(v.shipManager))===ptSelectedShipManager) &&
     (!ptSelectedTechPic || ptOrBlank(v.techPic)===ptSelectedTechPic) &&
@@ -3188,10 +3200,12 @@ const ptSearchInput = document.getElementById('ptSearchInput');
 ptSearchInput.addEventListener('input', () => { ptQuery = ptSearchInput.value; ptRenderTable(); });
 
 const ptOwnerSelect = document.getElementById('ptOwnerSelect');
+const ptTeamSelect = document.getElementById('ptTeamSelect');
 const ptClassSelect = document.getElementById('ptClassSelect');
 const ptShipManagerSelect = document.getElementById('ptShipManagerSelect');
 const ptTechPicSelect = document.getElementById('ptTechPicSelect');
 ptPopulateSelect(ptOwnerSelect, '전체 Owner', ptOwnerList, ptOwnerCounts, v => ptSelectedOwner = v);
+ptPopulateSelect(ptTeamSelect, '전체 PIC팀', ptTeamList, ptTeamCounts, v => ptSelectedTeam = v);
 ptPopulateSelect(ptClassSelect, '전체 Class', ptClassList, ptClassCounts, v => ptSelectedClass = v);
 ptPopulateSelect(ptShipManagerSelect, '전체 관리사', ptShipManagerList, ptShipManagerCounts, v => ptSelectedShipManager = v);
 ptPopulateSelect(ptTechPicSelect, '전체 담당 감독', ptTechPicList, ptTechPicCounts, v => ptSelectedTechPic = v);
@@ -3200,6 +3214,7 @@ document.getElementById('ptResetBtn').addEventListener('click', () => {
   ptQuery = ''; ptSearchInput.value = '';
   ptActiveSizes = new Set();
   ptSelectedOwner = ''; ptOwnerSelect.value = ''; ptOwnerSelect.classList.remove('active');
+  ptSelectedTeam = ''; ptTeamSelect.value = ''; ptTeamSelect.classList.remove('active');
   ptSelectedClass = ''; ptClassSelect.value = ''; ptClassSelect.classList.remove('active');
   ptSelectedShipManager = ''; ptShipManagerSelect.value = ''; ptShipManagerSelect.classList.remove('active');
   ptSelectedTechPic = ''; ptTechPicSelect.value = ''; ptTechPicSelect.classList.remove('active');
