@@ -1089,6 +1089,11 @@
       <div id="sohWrap" style="display:none;">
         <div class="group-editor-toolbar">
           <span class="select-hint" id="sohSummary">호르무즈 해협(Strait of Hormuz) 통항 완료 자동 기록 — SVMS 위경도 기준 근사 판정</span>
+          <select id="sohDirectionSelect" class="pt-select" title="방향으로 필터">
+            <option value="">전체 방향</option>
+            <option value="WESTBOUND">INBOUND(입항)</option>
+            <option value="EASTBOUND">OUTBOUND(출항)</option>
+          </select>
           <input type="text" id="sohSearchInput" class="fleet-search" placeholder="선박명 검색" autocomplete="off" style="max-width:200px;">
         </div>
         <table class="data-table" id="sohTable">
@@ -1250,59 +1255,59 @@ const VESSELS = [
 // 호르무즈 해협(SOH) 통항 완료 자동 기록 — auto_update.py가 매 실행마다
 // SOH Transit\soh_transit_log.csv 전체 내용으로 이 배열을 재생성함 (날짜 오름차순 누적, 덮어쓰기 아님)
 const SOH_TRANSIT_LOG = [
-  {date:"2026-07-29",vessel:"JAMAICA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-01",vessel:"SPAIN B",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-04",vessel:"SURINAME PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-05",vessel:"PANAMA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-05",vessel:"EGYPT PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-06",vessel:"PHILIPPINES PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-07",vessel:"TANZANIA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-08",vessel:"FIJI PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-08",vessel:"MALAYSIA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-08",vessel:"INDONESIA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-08",vessel:"GERMANY B",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-09",vessel:"MOZAMBIQUE B",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-10",vessel:"PERU PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-11",vessel:"ALGERIA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-11",vessel:"BAHAMAS PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-11",vessel:"BARBADOS PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-11",vessel:"JAMAICA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-12",vessel:"BRUNEI PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-13",vessel:"SINGAPORE PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-13",vessel:"DOMINICA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-14",vessel:"KUWAIT PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-14",vessel:"ANGOLA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-15",vessel:"SOUTH AFRICA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-15",vessel:"FIJI PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-16",vessel:"ALGERIA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-16",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-16",vessel:"MALAYSIA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-17",vessel:"MONACO PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-18",vessel:"SURINAME PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-19",vessel:"MOZAMBIQUE B",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-19",vessel:"BAHAMAS PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-19",vessel:"SWEDEN PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-19",vessel:"SINGAPORE PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-21",vessel:"EGYPT PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-21",vessel:"BULGARIA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-21",vessel:"SAMOA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-22",vessel:"INDONESIA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-22",vessel:"PANAMA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-24",vessel:"MYANMAR PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-25",vessel:"KUWAIT PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-25",vessel:"MONACO PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-25",vessel:"MONGOLIA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-25",vessel:"PORTUGAL PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-25",vessel:"ANGOLA PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-26",vessel:"SWEDEN PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-27",vessel:"SENEGAL PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-27",vessel:"SINGAPORE PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-27",vessel:"ALGERIA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-28",vessel:"PERU PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-28",vessel:"SURINAME PROSPERITY",direction:"EASTBOUND(출항)"},
-  {date:"2026-08-30",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-08-31",vessel:"GHANA PROSPERITY",direction:"WESTBOUND(입항)"},
-  {date:"2026-09-01",vessel:"EGYPT PROSPERITY",direction:"EASTBOUND(출항)"},
+  {date:"2026-07-29",vessel:"JAMAICA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
+  {date:"2026-08-01",vessel:"SPAIN B",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-04",vessel:"SURINAME PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-05",vessel:"PANAMA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
+  {date:"2026-08-05",vessel:"EGYPT PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-06",vessel:"PHILIPPINES PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-07",vessel:"TANZANIA PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-08",vessel:"FIJI PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
+  {date:"2026-08-08",vessel:"MALAYSIA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
+  {date:"2026-08-08",vessel:"INDONESIA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
+  {date:"2026-08-08",vessel:"GERMANY B",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-09",vessel:"MOZAMBIQUE B",direction:"WESTBOUND(입항)",source:"manual"},
+  {date:"2026-08-10",vessel:"PERU PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-11",vessel:"ALGERIA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
+  {date:"2026-08-11",vessel:"BAHAMAS PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-11",vessel:"BARBADOS PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-11",vessel:"JAMAICA PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-12",vessel:"BRUNEI PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-13",vessel:"SINGAPORE PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-13",vessel:"DOMINICA PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-14",vessel:"KUWAIT PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-14",vessel:"ANGOLA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
+  {date:"2026-08-15",vessel:"SOUTH AFRICA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-15",vessel:"FIJI PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-16",vessel:"ALGERIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-16",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-16",vessel:"MALAYSIA PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-17",vessel:"MONACO PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-18",vessel:"SURINAME PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-19",vessel:"MOZAMBIQUE B",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-19",vessel:"BAHAMAS PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-19",vessel:"SWEDEN PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-19",vessel:"SINGAPORE PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-21",vessel:"EGYPT PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-21",vessel:"BULGARIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-21",vessel:"SAMOA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-22",vessel:"INDONESIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-22",vessel:"PANAMA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-24",vessel:"MYANMAR PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-25",vessel:"KUWAIT PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-25",vessel:"MONACO PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-25",vessel:"MONGOLIA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-25",vessel:"PORTUGAL PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-25",vessel:"ANGOLA PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
+  {date:"2026-08-26",vessel:"SWEDEN PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-27",vessel:"SENEGAL PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-27",vessel:"SINGAPORE PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-27",vessel:"ALGERIA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-28",vessel:"PERU PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-28",vessel:"SURINAME PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-08-30",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-08-31",vessel:"GHANA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
+  {date:"2026-09-01",vessel:"EGYPT PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
 ];
 
 // 날짜별 선단 Laden/Ballast 척수 스냅샷 — auto_update.py가 매 실행마다
@@ -3315,13 +3320,15 @@ function buildNoonTable() {
   });
 }
 
-function buildSohTable(filter) {
+function buildSohTable() {
   const tbody = document.querySelector("#sohTable tbody");
   tbody.innerHTML = "";
-  const q = (filter || "").trim().toUpperCase();
+  const q = (document.getElementById("sohSearchInput").value || "").trim().toUpperCase();
+  const dirFilter = document.getElementById("sohDirectionSelect").value;
   // newest-first; SOH_TRANSIT_LOG itself is stored oldest-first (append-only log)
   const rows = [...SOH_TRANSIT_LOG].reverse()
-    .filter(r => !q || r.vessel.toUpperCase().includes(q));
+    .filter(r => !q || r.vessel.toUpperCase().includes(q))
+    .filter(r => !dirFilter || r.direction.startsWith(dirFilter));
   rows.forEach((r, pos) => {
     const tr = document.createElement("tr");
     const dirClass = r.direction.startsWith("WESTBOUND") ? "cond-sailing" : "cond-anchored";
@@ -3333,9 +3340,10 @@ function buildSohTable(filter) {
     tbody.appendChild(tr);
   });
   document.getElementById("sohSummary").textContent =
-    `호르무즈 해협(Strait of Hormuz) 통항 완료 자동 기록 — 총 ${SOH_TRANSIT_LOG.length}건 (SVMS 위경도 기준 근사 판정)`;
+    `호르무즈 해협(Strait of Hormuz) 통항 완료 자동 기록 — 총 ${SOH_TRANSIT_LOG.length}건 중 ${rows.length}건 표시 (SVMS 위경도 기준 근사 판정)`;
 }
-document.getElementById("sohSearchInput").addEventListener("input", (e) => buildSohTable(e.target.value));
+document.getElementById("sohSearchInput").addEventListener("input", buildSohTable);
+document.getElementById("sohDirectionSelect").addEventListener("change", buildSohTable);
 
 function buildTrendChart() {
   const wrap = document.getElementById("trendChartWrap");
