@@ -926,8 +926,9 @@
   .soh-auto-toggle-btn:hover { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-hover); }
   #sohAutoWrap { margin-top: 10px; }
 
-  /* ── 예정 INBOUND/OUTBOUND 선박 리스트 (선명/BLT/MANAGER/CARGO/CHARTERER/LOCATION
-     가상 열 정렬) ── */
+  /* ── 예정 INBOUND/OUTBOUND 선박 리스트 - 선명/BLT/MANAGER/CARGO/CHARTERER/LOCATION
+     열을 가진 미니 테이블. 기존 table.data-table과 같은 언어(uppercase th, accent
+     밑줄, 짝수행 zebra)를 그대로 따르되 좁은 패널에 맞게 압축한 변형. ── */
   .soh-pending-panels { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
   .soh-pending-panel {
     flex: 1 1 420px; border: 1px solid var(--border); border-radius: 9px;
@@ -937,26 +938,23 @@
   .soh-pending-title span#sohPendingInboundCount,
   .soh-pending-title span#sohPendingOutboundCount { color: var(--accent-hover); }
   .soh-pending-hint { font-weight: 400; color: var(--text-muted); font-size: 10.5px; margin-left: 4px; }
-  .soh-pending-scroll { overflow-x: auto; }
-  .soh-pending-cols {
-    display: grid;
-    grid-template-columns: minmax(120px,1.3fr) 40px 68px 76px minmax(76px,1fr) minmax(90px,1.1fr);
-    gap: 6px; align-items: center; min-width: 460px;
+  .soh-pending-scroll { max-height: 220px; overflow: auto; border-radius: 6px; }
+  table.soh-pending-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 11.5px; margin-top: 0; }
+  table.soh-pending-table th, table.soh-pending-table td {
+    text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); color: var(--text-primary);
+    white-space: nowrap;
   }
-  .soh-pending-head {
-    font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase;
-    color: var(--text-muted); padding: 0 8px 4px;
+  table.soh-pending-table th {
+    position: sticky; top: 0; background: var(--surface-1); color: var(--text-muted);
+    font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;
+    border-bottom: 2px solid var(--accent);
   }
-  .soh-pending-list { list-style: none; margin: 0; padding: 0; max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-  .soh-pending-list li {
-    font-size: 11.5px; padding: 5px 8px; border-radius: 5px; background: var(--page); color: var(--text-secondary);
-  }
-  .soh-pending-list li > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  table.soh-pending-table tbody tr:nth-child(even) td { background: var(--page); }
+  table.soh-pending-table tbody tr:hover td { background: var(--accent-wash); }
+  table.soh-pending-table tbody tr:last-child td { border-bottom: none; }
+  table.soh-pending-table td.no-data { font-style: italic; color: var(--text-muted); text-align: center; }
   .soh-pending-name { font-weight: 600; color: var(--text-primary); }
-  .soh-pending-cargo { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
-  .soh-pending-list li.soh-pending-empty {
-    display: block; color: var(--text-muted); font-style: italic; background: none; padding-left: 0;
-  }
+  .soh-pending-cargo { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; white-space: nowrap; }
 
   .trend-legend { display: flex; gap: 16px; margin: 10px 0 4px; }
   .trend-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
@@ -1157,20 +1155,20 @@
             <div class="soh-pending-title">예정 INBOUND <span id="sohPendingInboundCount">0</span>척
               <span class="soh-pending-hint">(호르무즈 IN 결정 리스트 - PLAN 엑셀 기준)</span></div>
             <div class="soh-pending-scroll">
-              <div class="soh-pending-cols soh-pending-head">
-                <span>선명</span><span>BLT YEAR</span><span>MANAGER</span><span>CARGO STATUS</span><span>CHARTERER</span><span>CURRENT LOCATION</span>
-              </div>
-              <ul class="soh-pending-list" id="sohPendingInboundList"></ul>
+              <table class="soh-pending-table">
+                <thead><tr><th>선명</th><th>BLT YEAR</th><th>MANAGER</th><th>CARGO STATUS</th><th>CHARTERER</th><th>CURRENT LOCATION</th></tr></thead>
+                <tbody id="sohPendingInboundList"></tbody>
+              </table>
             </div>
           </div>
           <div class="soh-pending-panel">
             <div class="soh-pending-title">예정 OUTBOUND <span id="sohPendingOutboundCount">0</span>척
               <span class="soh-pending-hint">(현재 AG(걸프) 내부 전체 선박 - 위치 기준 실시간 계산)</span></div>
             <div class="soh-pending-scroll">
-              <div class="soh-pending-cols soh-pending-head">
-                <span>선명</span><span>BLT YEAR</span><span>MANAGER</span><span>CARGO STATUS</span><span>CHARTERER</span><span>CURRENT LOCATION</span>
-              </div>
-              <ul class="soh-pending-list" id="sohPendingOutboundList"></ul>
+              <table class="soh-pending-table">
+                <thead><tr><th>선명</th><th>BLT YEAR</th><th>MANAGER</th><th>CARGO STATUS</th><th>CHARTERER</th><th>CURRENT LOCATION</th></tr></thead>
+                <tbody id="sohPendingOutboundList"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -3523,15 +3521,15 @@ function vesselIsInGulf(v, latestByVessel) {
 function sohPendingLi(v) {
   const cargo = v.cargoStatus
     ? `<span class="soh-pending-cargo"><span class="swatch-shape ${v.cargoStatus === "Ballast" ? "bl-ballast" : "bl-laden"}"></span>${v.cargoStatus}</span>`
-    : `<span>-</span>`;
-  return `<li class="soh-pending-cols">`
-    + `<span class="soh-pending-name">${v.name}</span>`
-    + `<span>${v.built || "-"}</span>`
-    + `<span>${v.manager || "-"}</span>`
-    + cargo
-    + `<span>${v.charterer || "-"}</span>`
-    + `<span>${v.location || "-"}</span>`
-    + `</li>`;
+    : "-";
+  return `<tr>`
+    + `<td class="soh-pending-name">${v.name}</td>`
+    + `<td>${v.built || "-"}</td>`
+    + `<td>${v.manager || "-"}</td>`
+    + `<td>${cargo}</td>`
+    + `<td>${v.charterer || "-"}</td>`
+    + `<td>${v.location || "-"}</td>`
+    + `</tr>`;
 }
 
 function buildSohPendingLists() {
@@ -3553,7 +3551,7 @@ function buildSohPendingLists() {
     }));
   inboundList.innerHTML = inboundRows.length
     ? inboundRows.map(sohPendingLi).join("")
-    : `<li class="soh-pending-empty">해당 선박 없음</li>`;
+    : `<tr><td class="no-data" colspan="6">해당 선박 없음</td></tr>`;
   document.getElementById("sohPendingInboundCount").textContent = inboundRows.length;
 
   const latestByVessel = latestConfirmedDirectionByVessel();
@@ -3568,7 +3566,7 @@ function buildSohPendingLists() {
     .sort((a, b) => a.name.localeCompare(b.name));
   outboundList.innerHTML = outboundRows.length
     ? outboundRows.map(sohPendingLi).join("")
-    : `<li class="soh-pending-empty">해당 선박 없음</li>`;
+    : `<tr><td class="no-data" colspan="6">해당 선박 없음</td></tr>`;
   document.getElementById("sohPendingOutboundCount").textContent = outboundRows.length;
 }
 
