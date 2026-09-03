@@ -1151,7 +1151,7 @@
 
         <table class="data-table soh-confirmed-table" id="sohTable">
           <thead>
-            <tr><th class="soh-toggle-col"></th><th>#</th><th>Date</th><th>Vessel</th><th>Direction</th><th>Source</th></tr>
+            <tr><th class="soh-toggle-col"></th><th>#</th><th>Date</th><th>Vessel</th><th>Blt Year</th><th>Manager</th><th>Direction</th><th>Source</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -3544,6 +3544,7 @@ function buildSohTable() {
     summaryTr.className = "soh-summary-row";
     summaryTr.innerHTML = `<td><span class="soh-toggle-icon">▶</span></td>`
       + `<td class="num">${confirmed.length - pos}</td><td class="num">${sohDateRangeLabel(r)}</td><td>${r.vessel}</td>`
+      + `<td class="num">${r.built || "-"}</td><td>${r.manager || "-"}</td>`
       + `<td><span class="swatch-dot ${sohDirClass(r.direction)}"></span>${sohDirLabel(r.direction)}</td>`
       + `<td><span class="soh-source-badge">${r.source === "excel" ? "PLAN 엑셀" : "수동확인"}</span></td>`;
 
@@ -3555,10 +3556,9 @@ function buildSohTable() {
       `<div class="soh-wp"><span class="pt">${wp.point}</span><span class="tm">${wp.time}</span></div>`
       + (i < wps.length - 1 ? `<span class="soh-wp-arrow">→</span>` : "")
     ).join("");
-    const metaHTML = ["built", "manager", "sire"]
-      .filter(k => r[k])
-      .map(k => `<span>${k.toUpperCase()} <b>${r[k]}</b></span>`).join("");
-    detailTr.innerHTML = `<td colspan="6">`
+    // BUILT/MANAGER는 이제 요약행에 바로 보이므로 상세엔 SIRE만
+    const metaHTML = r.sire ? `<span>SIRE <b>${r.sire}</b></span>` : "";
+    detailTr.innerHTML = `<td colspan="8">`
       + (metaHTML ? `<div class="soh-detail-meta">${metaHTML}</div>` : "")
       + (wpHTML ? `<div class="soh-wp-chain">${wpHTML}</div>` : `<span class="select-hint">웨이포인트 상세 없음</span>`)
       + `</td>`;
