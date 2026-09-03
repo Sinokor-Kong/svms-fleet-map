@@ -903,6 +903,29 @@
   .pt-eng .m2 { font-size: 10px; color: var(--text-muted); }
   table.data-table tr:last-child td { border-bottom: none; }
 
+  /* ── SOH 통항 확정 기록 — 행 확장(펼치기)로 Built/Manager/SIRE + 5개 웨이포인트 통과시각 표시 ── */
+  .soh-toggle-col { width: 22px; }
+  .soh-confirmed-table tbody tr.soh-summary-row { cursor: pointer; }
+  .soh-toggle-icon { display: inline-block; width: 10px; color: var(--text-muted); font-size: 10px; }
+  .soh-source-badge {
+    display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700;
+    background: var(--accent-wash); color: var(--accent-hover);
+  }
+  .soh-detail-row td { background: var(--page); padding: 10px 14px 14px 34px; }
+  .soh-detail-meta { display: flex; gap: 18px; margin-bottom: 8px; color: var(--text-secondary); font-size: 12px; }
+  .soh-detail-meta b { color: var(--text-primary); font-weight: 700; }
+  .soh-wp-chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .soh-wp { display: flex; flex-direction: column; gap: 1px; padding: 5px 9px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-1); }
+  .soh-wp .pt { font-weight: 700; font-size: 11px; color: var(--accent-hover); }
+  .soh-wp .tm { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+  .soh-wp-arrow { color: var(--text-muted); }
+  .soh-auto-toggle-btn {
+    margin-top: 12px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 7px;
+    background: none; color: var(--text-secondary); font-size: 12px; cursor: pointer;
+  }
+  .soh-auto-toggle-btn:hover { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-hover); }
+  #sohAutoWrap { margin-top: 10px; }
+
   .trend-legend { display: flex; gap: 16px; margin: 10px 0 4px; }
   .trend-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
   .trend-legend-dot-laden   { background: var(--cond-anchored); }
@@ -1088,7 +1111,7 @@
 
       <div id="sohWrap" style="display:none;">
         <div class="group-editor-toolbar">
-          <span class="select-hint" id="sohSummary">호르무즈 해협(Strait of Hormuz) 통항 완료 자동 기록 — SVMS 위경도 기준 근사 판정</span>
+          <span class="select-hint" id="sohSummary">호르무즈 해협(Strait of Hormuz) 통항 확정 기록 — 호르무즈 통항 PLAN 엑셀 기준</span>
           <select id="sohDirectionSelect" class="pt-select" title="방향으로 필터">
             <option value="">전체 방향</option>
             <option value="WESTBOUND">INBOUND(입항)</option>
@@ -1096,12 +1119,24 @@
           </select>
           <input type="text" id="sohSearchInput" class="fleet-search" placeholder="선박명 검색" autocomplete="off" style="max-width:200px;">
         </div>
-        <table class="data-table" id="sohTable">
+        <table class="data-table soh-confirmed-table" id="sohTable">
           <thead>
-            <tr><th>#</th><th>Date</th><th>Vessel</th><th>Direction</th></tr>
+            <tr><th class="soh-toggle-col"></th><th>#</th><th>Date</th><th>Vessel</th><th>Direction</th><th>Source</th></tr>
           </thead>
           <tbody></tbody>
         </table>
+
+        <button type="button" id="sohAutoToggleBtn" class="soh-auto-toggle-btn">
+          <span class="soh-toggle-icon" id="sohAutoToggleIcon">▶</span> 자동 탐지 참고자료 (SVMS 위경도 기준 근사 판정, 미확정) <span id="sohAutoCount">0</span>건 보기
+        </button>
+        <div id="sohAutoWrap" style="display:none;">
+          <table class="data-table" id="sohAutoTable">
+            <thead>
+              <tr><th>#</th><th>Date</th><th>Vessel</th><th>Direction</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
 
       <div id="trendWrap" style="display:none;">
@@ -1255,59 +1290,125 @@ const VESSELS = [
 // 호르무즈 해협(SOH) 통항 완료 자동 기록 — auto_update.py가 매 실행마다
 // SOH Transit\soh_transit_log.csv 전체 내용으로 이 배열을 재생성함 (날짜 오름차순 누적, 덮어쓰기 아님)
 const SOH_TRANSIT_LOG = [
-  {date:"2026-07-29",vessel:"JAMAICA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
-  {date:"2026-08-01",vessel:"SPAIN B",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-04",vessel:"SURINAME PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-05",vessel:"PANAMA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
-  {date:"2026-08-05",vessel:"EGYPT PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-06",vessel:"PHILIPPINES PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-07",vessel:"TANZANIA PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-08",vessel:"FIJI PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
-  {date:"2026-08-08",vessel:"MALAYSIA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
-  {date:"2026-08-08",vessel:"INDONESIA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
-  {date:"2026-08-08",vessel:"GERMANY B",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-09",vessel:"MOZAMBIQUE B",direction:"WESTBOUND(입항)",source:"manual"},
-  {date:"2026-08-10",vessel:"PERU PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-11",vessel:"ALGERIA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
-  {date:"2026-08-11",vessel:"BAHAMAS PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-11",vessel:"BARBADOS PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-11",vessel:"JAMAICA PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-12",vessel:"BRUNEI PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-13",vessel:"SINGAPORE PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-13",vessel:"DOMINICA PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-14",vessel:"KUWAIT PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-14",vessel:"ANGOLA PROSPERITY",direction:"WESTBOUND(입항)",source:"manual"},
-  {date:"2026-08-15",vessel:"SOUTH AFRICA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-15",vessel:"FIJI PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-16",vessel:"ALGERIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-16",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-16",vessel:"MALAYSIA PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-17",vessel:"MONACO PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-18",vessel:"SURINAME PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-19",vessel:"MOZAMBIQUE B",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-19",vessel:"BAHAMAS PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-19",vessel:"SWEDEN PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-19",vessel:"SINGAPORE PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-21",vessel:"EGYPT PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-21",vessel:"BULGARIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-21",vessel:"SAMOA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-22",vessel:"INDONESIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-22",vessel:"PANAMA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-24",vessel:"MYANMAR PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-25",vessel:"KUWAIT PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-25",vessel:"MONACO PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-25",vessel:"MONGOLIA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-25",vessel:"PORTUGAL PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-25",vessel:"ANGOLA PROSPERITY",direction:"EASTBOUND(출항)",source:"manual"},
-  {date:"2026-08-26",vessel:"SWEDEN PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-27",vessel:"SENEGAL PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-27",vessel:"SINGAPORE PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-27",vessel:"ALGERIA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-28",vessel:"PERU PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-28",vessel:"SURINAME PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
-  {date:"2026-08-30",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-08-31",vessel:"GHANA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto"},
-  {date:"2026-09-01",vessel:"EGYPT PROSPERITY",direction:"EASTBOUND(출항)",source:"auto"},
+  {date:"2026-06-20",vessel:"GULF SUNRISE",direction:"EASTBOUND(출항)",source:"excel",built:"2017",manager:"VSG",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"6/20 1530LT (1130GMT)"},{point:"CP-S",time:"6/20 1845 LT (1445GMT)"},{point:"CP-D",time:"6/20 1935 LT (1535GMT)"},{point:"CP-H",time:"6/20 2036 LT (1636GMT)"},{point:"CP-Z",time:"6/20 2100 LT (1700GMT)"}]},
+  {date:"2026-06-20",vessel:"MONACO LOYALTY",direction:"EASTBOUND(출항)",source:"excel",built:"2007",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"6/20 1800LT (1400GMT)"},{point:"CP-S",time:"6/20 1953LT (1653GMT)"},{point:"CP-D",time:"6/20 2122LT (1822GMT)"},{point:"CP-H",time:"6/21 0001LT (2101GMT)"},{point:"CP-Z",time:"6/21 0200LT (2200GMT)"}]},
+  {date:"2026-06-21",vessel:"BELGIUM B",direction:"WESTBOUND(입항)",source:"excel",built:"2016",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"6/21 2330LT (1930GMT)"},{point:"CP-H",time:"6/22 0130LT (2130GMT)"},{point:"CP-D",time:"6/22 0330LT (2330GMT)"},{point:"CP-S",time:"6/22 0430LT (0030GMT)"},{point:"CP-A",time:"6/22 0655LT (0255GMT)"}]},
+  {date:"2026-06-22",vessel:"SOUTH AFRICA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"6/22 0358LT (2358GMT)"},{point:"CP-H",time:"6/22 0549LT (0149GMT)"},{point:"CP-D",time:"6/22 0749LT (0349GMT)"},{point:"CP-S",time:"6/22 0908LT (0508GMT)"},{point:"CP-A",time:"6/22 1039LT (0639GMT)"}]},
+  {date:"2026-06-23",vessel:"PLATA CARRIER",direction:"EASTBOUND(출항)",source:"excel",built:"2008",manager:"ANGLO E",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"6/23 0148LT (2148GMT)"},{point:"CP-S",time:"6/23 0345LT (2345GMT)"},{point:"CP-D",time:"6/23 0530LT (0130GMT)"},{point:"CP-H",time:"6/23 0815LT (0415GMT)"},{point:"CP-Z",time:"6/23 1048LT (0648GMT)"}]},
+  {date:"2026-06-24",vessel:"DUBAI ENERGY",direction:"EASTBOUND(출항)",source:"excel",built:"2013",manager:"OSM-THOME",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"6/24 0745LT (0345GMT)"},{point:"CP-S",time:"6/24 1000LT (0600GMT)"},{point:"CP-D",time:"6/24 1200LT (0800GMT)"},{point:"CP-H",time:"6/24 1500LT (1100GMT)"},{point:"CP-Z",time:"6/24 1730LT (1330GMT)"}]},
+  {date:"2026-06-27",vessel:"KUWAIT PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2016",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"6/27 0400LT (0000GMT)"},{point:"CP-H",time:"6/27 0555LT (0155GMT)"},{point:"CP-D",time:"6/27 0745LT (0345GMT)"},{point:"CP-S",time:"6/27 0915LT (0515GMT)"},{point:"CP-A",time:"6/27 1110LT (0710GMT)"}]},
+  {date:"2026-06-29",vessel:"ECUADOR PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2006",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"6/29 2306LT (1806GMT)"},{point:"CP-H",time:"6/30 0130LT (2130GMT)"},{point:"CP-D",time:"6/30 0200LT (2200GMT)"},{point:"CP-S",time:"6/30 0330LT (2330GMT)"},{point:"CP-A",time:"6/30 0545LT (0145GMT)"}]},
+  {date:"2026-06-30",vessel:"COLOMBIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2016",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"6/30 1630LT(1230GMT)"},{point:"CP-H",time:"6/30 1802LT(1402GMT)"},{point:"CP-D",time:"6/30 1957LT(1557GMT)"},{point:"CP-S",time:"6/30 2108LT(1708GMT)"},{point:"CP-A",time:"6/30 2300LT(1900GMT)"}]},
+  {date:"2026-06-30",vessel:"CONGO PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2017",manager:"CSM",sire:"IDLE",waypoints:[{point:"CP-Z",time:"6/30 2000LT (1100GMT)"},{point:"CP-H",time:"6/30 2052LT (1605GMT)"},{point:"CP-D",time:"6/30 2207LT (1807GMT)"},{point:"CP-S",time:"6/30 2336LT (1636GMT)"},{point:"CP-A",time:"7/01 0130LT (2130GMT)"}]},
+  {date:"2026-06-30",vessel:"COSTA RICA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2012",manager:"WAH KWONG",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"6/30 2210LT (1810GMT)"},{point:"CP-H",time:"6/30 2355LT (1955GMT)"},{point:"CP-D",time:"7/1 0154LT(2154GMT)"},{point:"CP-S",time:"7/01 0335LT(2335GMT)"},{point:"CP-A",time:"7/01 0518LT(0118GMT)"}]},
+  {date:"2026-07-01",vessel:"FINLAND PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2009",manager:"BSM",sire:"IDLE",waypoints:[{point:"CP-Z",time:"7/1 0400LT (0000GMT)"},{point:"CP-H",time:"7/1 0630LT (0230GMT)"},{point:"CP-D",time:"7/1 0830LT (0430GMT)"},{point:"CP-S",time:"7/1 1000LT (0600GMT)"},{point:"CP-A",time:"7/1 1200LT (0800GMT)"}]},
+  {date:"2026-07-01",vessel:"BARBADOS PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2010",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"7/1 0612LT (0212GMT)"},{point:"CP-H",time:"7/1 0753LT (0353 GMT)"},{point:"CP-D",time:"7/1 0836LT (0436GMT)"},{point:"CP-S",time:"7/1 1104LT (0704GMT)"},{point:"CP-A",time:"7/1 1248LT (0848GMT)"}]},
+  {date:"2026-07-01",vessel:"SURINAME PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2009",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"7/1 2000LT (1600GMT)"},{point:"CP-H",time:"7/1 2200LT (1800GMT)"},{point:"CP-D",time:"7/2 0010LT (2010GMT)"},{point:"CP-S",time:"7/2 0144LT (2144GMT)"},{point:"CP-A",time:"7/2 0340LT (2340GMT)"}]},
+  {date:"2026-07-01",vessel:"SPAIN B",direction:"WESTBOUND(입항)",source:"excel",built:"2016",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"7/1 2120LT (1720GMT)"},{point:"CP-H",time:"7/1 2250LT (1850GMT)"},{point:"CP-D",time:"7/2 0049LT (2049GMT)"},{point:"CP-S",time:"7/2 0220LT (2220GMT)"},{point:"CP-A",time:"7/2 0410LT (0010GMT)"}]},
+  {date:"2026-07-02",vessel:"DOMINICA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"ANGLO E",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"7/2 0554LT (0154GMT)"},{point:"CP-H",time:"7/2 0740LT (0340GMT)"},{point:"CP-D",time:"7/2 0930LT (0530GMT)"},{point:"CP-S",time:"7/2 1054LT (0654GMT)"},{point:"CP-A",time:"7/2 1232LT (0832GMT)"}]},
+  {date:"2026-07-02",vessel:"PERU PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2009",manager:"SYNERGY",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"7/2 1516LT (1116GMT)"},{point:"CP-H",time:"7/2 1706LT (1206GMT)"},{point:"CP-D",time:"7/2 1910LT (1510GMT)"},{point:"CP-S",time:"7/3 0135LT (2135GMT)"},{point:"CP-A",time:"7/3 0300LT (2300GMT)"}]},
+  {date:"2026-07-02",vessel:"GERMANY B",direction:"WESTBOUND(입항)",source:"excel",built:"2010",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"7/2 1930LT (1530GMT)"},{point:"CP-H",time:"7/2 2107LT (1707GMT)"},{point:"CP-D",time:"7/2 2251LT (1851GMT)"},{point:"CP-S",time:"7/3 0009LT (2009GMT)"},{point:"CP-A",time:"7/3 0230LT (2230GMT)"}]},
+  {date:"2026-07-02",vessel:"BAHAMAS PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2007",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"7/2 2130LT (1730GMT)"},{point:"CP-H",time:"7/2 2335LT (1935GMT)"},{point:"CP-D",time:"7/3 0130LT (2130GMT)"},{point:"CP-S",time:"7/3 0254LT (2254GMT)"},{point:"CP-A",time:"7/3 0430LT (0030GMT)"}]},
+  {date:"2026-07-03",vessel:"BULGARIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2008",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"7/3 1815LT (1415GMT)"},{point:"CP-H",time:"7/3 2010LT (1610GMT)"},{point:"CP-D",time:"7/3 2212LT (1812GMT)"},{point:"CP-S",time:"7/4 2348LT (1948GMT)"},{point:"CP-A",time:"7/4 0100LT (2100GMT)"}]},
+  {date:"2026-07-05",vessel:"TANZANIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2010",manager:"SYNERGY",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"7/5 0606LT (0206GMT)"},{point:"CP-H",time:"7/5 0800LT (0400GMT)"},{point:"CP-D",time:"7/5 1000LT (0600GMT)"},{point:"CP-S",time:"7/5 1130LT (0730GMT)"},{point:"CP-A",time:"7/5 1318LT (0918GMT)"}]},
+  {date:"2026-07-05",vessel:"BRUNEI PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2010",manager:"FLEET",sire:"IDLE",waypoints:[{point:"CP-Z",time:"7/5 0940LT (0540GMT)"},{point:"CP-H",time:"7/5 1100LT (0700GMT)"},{point:"CP-D",time:"7/5 1255LT (0855GMT)"},{point:"CP-S",time:"7/5 1410LT (1010GMT)"},{point:"CP-A",time:"7/5 1535LT (1135GMT)"}]},
+  {date:"2026-07-05",vessel:"EGYPT PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"7/5 1342LT (0942GMT)"},{point:"CP-H",time:"7/5 1518LT (1118GMT)"},{point:"CP-D",time:"7/5 1715LT (1315GMT)"},{point:"CP-S",time:"7/5 1840LT (1440GMT)"},{point:"CP-A",time:"7/5 2030LT (1630GMT)"}]},
+  {date:"2026-07-11",vessel:"BELGIUM B",direction:"EASTBOUND(출항)",source:"excel",built:"2016",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"7/11 0324LT (2324GMT)"},{point:"CP-S",time:"7/11 0415LT (0015GMT)"},{point:"CP-D",time:"7/11 0500LT (0100GMT)"},{point:"CP-H",time:"7/11 0630LT (0230GMT)"},{point:"CP-Z",time:"7/11 0920LT (0520GMT)"}]},
+  {date:"2026-07-12",vessel:"KUWAIT PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2016",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"7/12 0100LT (2100GMT)"},{point:"CP-S",time:"7/12 0240LT (2240GMT)"},{point:"CP-D",time:"7/12 0400LT (0000GMT)"},{point:"CP-H",time:"7/12 0600LT (0200GMT)"},{point:"CP-Z",time:"7/12 0800LT (0400GMT)"}]},
+  {date:"2026-07-12",vessel:"CONGO PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2017",manager:"CSM",sire:"IDLE",waypoints:[{point:"CP-A",time:"7/12 2018LT (1618GMT)"},{point:"CP-S",time:"7/12 2230LT (1830GMT)"},{point:"CP-D",time:"7/13 0012LT (2012GMT)"},{point:"CP-H",time:"7/13 0230LT (2230GMT)"},{point:"CP-Z",time:"7/13 0452LT (0052GMT)"}]},
+  {date:"2026-07-13",vessel:"PHILIPPINES PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2010",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"7/13 2200LT (1800GMT)"},{point:"CP-H",time:"7/13 2336LT (1936GMT)"},{point:"CP-D",time:"7/14 0120LT (2120GMT)"},{point:"CP-S",time:"7/14 0300LT (2300GMT)"},{point:"CP-A",time:"7/14 0430LT (0030GMT)"}]},
+  {date:"2026-07-13",vessel:"COSTA RICA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2012",manager:"WAH KWONG",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"7/13 2025LT (1625GMT)"},{point:"CP-S",time:"7/13 2215LT (1815GMT)"},{point:"CP-D",time:"7/13 2355LT (1955GMT)"},{point:"CP-H",time:"7/14 0200LT (2200GMT)"},{point:"CP-Z",time:"7/14 0355LT (2355GMT)"}]},
+  {date:"2026-07-14",vessel:"COLOMBIA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2016",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"7/14 0030LT (2030GMT)"},{point:"CP-S",time:"7/14 0205LT (2205GMT)"},{point:"CP-D",time:"7/14 0340LT (2340GMT)"},{point:"CP-H",time:"7/14 0530LT (0130GMT)"},{point:"CP-Z",time:"7/14 0710LT (0310GMT)"}]},
+  {date:"2026-07-14",vessel:"ECUADOR PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2006",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-A",time:"7/14 0230LT (2230GMT)"},{point:"CP-S",time:"7/14 0320LT (2320GMT)"},{point:"CP-D",time:"7/14 0405LT (0005GMT)"},{point:"CP-H",time:"7/14 0615LT (0215GMT)"},{point:"CP-Z",time:"7/14 0830LT (0430GMT)"}]},
+  {date:"2026-07-28",vessel:"JAMAICA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2012",manager:"CSM",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"7/28 1915LT (1515GMT)"},{point:"CP-H",time:"7/28 2052LT (1652GMT)"},{point:"CP-D",time:"7/28 2244LT (1844GMT)"},{point:"CP-S",time:"7/29 0012LT (2012GMT)"},{point:"CP-A",time:"7/29 0156LT (2156GMT)"}]},
+  {date:"2026-07-31",vessel:"SPAIN B",direction:"EASTBOUND(출항)",source:"excel",built:"2016",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"7/31 2200LT (1800GMT)"},{point:"CP-S",time:"7/31 2345LT (1945GMT)"},{point:"CP-D",time:"8/1 0110LT (2110GMT)"},{point:"CP-H",time:"8/1 0307LT (2307GMT)"},{point:"CP-Z",time:"8/1 0500LT (0100GMT)"}]},
+  {date:"2026-08-03",vessel:"SURINAME PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2009",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/3 2145LT (1745GMT)"},{point:"CP-S",time:"8/3 2313LT (1913GMT)"},{point:"CP-D",time:"8/4 0058LT (2058GMT)"},{point:"CP-H",time:"8/4 0338LT (2338GMT)"},{point:"CP-Z",time:"8/4 0614LT (0214GMT)"}]},
+  {date:"2026-08-04",vessel:"PANAMA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2013",manager:"SYNERGY",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"8/4 2315LT (1915GMT)"},{point:"CP-H",time:"8/5 0102LT (2102GMT)"},{point:"CP-D",time:"8/5 0255LT (2255GMT)"},{point:"CP-S",time:"8/5 0417LT (0017GMT)"},{point:"CP-A",time:"8/5 0558LT (0158GMT)"}]},
+  {date:"2026-08-04",vessel:"EGYPT PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/4 2035LT (1635GMT)"},{point:"CP-S",time:"8/4 2230LT (1830GMT)"},{point:"CP-D",time:"8/5 0030LT (2030GMT)"},{point:"CP-H",time:"8/5 0300LT (2300GMT)"},{point:"CP-Z",time:"8/5 0500LT (0100GMT)"}]},
+  {date:"2026-08-05",vessel:"PHILIPPINES PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2010",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/5 2028LT (1628GMT)"},{point:"CP-S",time:"8/5 2200LT (1800GMT)"},{point:"CP-D",time:"8/5 2312LT (1912GMT)"},{point:"CP-H",time:"8/6 0141LT (2141GMT)"},{point:"CP-Z",time:"8/6 0339LT (2339GMT)"}]},
+  {date:"2026-08-06",vessel:"TANZANIA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2010",manager:"SYNERGY",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/6 2002LT (1602GMT)"},{point:"CP-S",time:"8/6 2200LT (1800GMT)"},{point:"CP-D",time:"8/6 2300LT (1900GMT)"},{point:"CP-H",time:"8/7 0112LT (2130GMT)"},{point:"CP-Z",time:"8/7 0315LT (2315GMT)"}]},
+  {date:"2026-08-07",vessel:"FIJI PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"CSM",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"8/7 2000LT (1600GMT)"},{point:"CP-H",time:"8/7 2145LT (1745GMT)"},{point:"CP-D",time:"8/7 2351LT (1951GMT)"},{point:"CP-S",time:"8/8 0116LT (2116GMT)"},{point:"CP-A",time:"8/8 0251LT (2251GMT)"}]},
+  {date:"2026-08-07",vessel:"MALAYSIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"SYNERGY",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/7 2230LT (1830GMT)"},{point:"CP-H",time:"8/8 0030LT (2030GMT)"},{point:"CP-D",time:"8/8 0242LT (2242GMT)"},{point:"CP-S",time:"8/8 0408LT (0008GMT)"},{point:"CP-A",time:"8/8 0554LT (0154GMT)"}]},
+  {date:"2026-08-07",vessel:"GERMANY B",direction:"EASTBOUND(출항)",source:"excel",built:"2010",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/7 2007LT (1607GMT)"},{point:"CP-S",time:"8/7 2225LT (1825GMT)"},{point:"CP-D",time:"8/7 2345LT (1945GMT)"},{point:"CP-H",time:"8/8 0200LT (2200GMT)"},{point:"CP-Z",time:"8/8 0340LT (2340GMT)"}]},
+  {date:"2026-08-08",vessel:"INDONESIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2005",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/8 0137LT (2137GMT)"},{point:"CP-H",time:"8/8 0342LT (2342GMT)"},{point:"CP-D",time:"8/8 0548LT (0148GMT)"},{point:"CP-S",time:"8/8 0720LT (0320GMT)"},{point:"CP-A",time:"8/8 0900LT (0500GMT)"}]},
+  {date:"2026-08-08",vessel:"MOZAMBIQUE B",direction:"WESTBOUND(입항)",source:"excel",built:"2008",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/8 2007LT (1607GMT)"},{point:"CP-H",time:"8/8 2152LT (1752GMT)"},{point:"CP-D",time:"8/8 2358LT (1958GMT)"},{point:"CP-S",time:"8/9 0123LT (2123GMT)"},{point:"CP-A",time:"8/9 0258LT (2258GMT)"}]},
+  {date:"2026-08-09",vessel:"PERU PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2009",manager:"SYNERGY",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/9 2030LT (1630GMT)"},{point:"CP-S",time:"8/9 2225LT (1825GMT)"},{point:"CP-D",time:"8/9 2349LT (1949GMT)"},{point:"CP-H",time:"8/10 0200LT (2200GMT)"},{point:"CP-Z",time:"8/10 0415LT (0015GMT)"}]},
+  {date:"2026-08-10",vessel:"ALGERIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2013",manager:"ESM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/10 2000LT (1600GMT)"},{point:"CP-H",time:"8/10 2157LT (1757GMT)"},{point:"CP-D",time:"8/11 0006LT (2006GMT)"},{point:"CP-S",time:"8/11 0130LT (2130GMT)"},{point:"CP-A",time:"8/11 0309LT (2309GMT)"}]},
+  {date:"2026-08-10",vessel:"BAHAMAS PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2007",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/10 2000LT (1600GMT)"},{point:"CP-S",time:"8/10 2122LT (1722GMT)"},{point:"CP-D",time:"8/10 2246LT (1846GMT)"},{point:"CP-H",time:"8/11 0100LT (2100GMT)"},{point:"CP-Z",time:"8/11 0305LT (2305GMT)"}]},
+  {date:"2026-08-10",vessel:"BARBADOS PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2010",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/10 2100LT (1700GMT)"},{point:"CP-S",time:"8/10 2242LT (1842GMT)"},{point:"CP-D",time:"8/11 0002LT (2002GMT)"},{point:"CP-H",time:"8/11 0200LT (2200GMT)"},{point:"CP-Z",time:"8/11 0354LT (2354GMT)"}]},
+  {date:"2026-08-10",vessel:"JAMAICA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2012",manager:"CSM",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/10 2036LT (1636GMT)"},{point:"CP-S",time:"8/10 2236LT (1836GMT)"},{point:"CP-D",time:"8/11 0000LT (2000GMT)"},{point:"CP-H",time:"8/11 0206LT (2206GMT)"},{point:"CP-Z",time:"8/11 0405LT (0005GMT)"}]},
+  {date:"2026-08-11",vessel:"BRUNEI PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2010",manager:"FLEET",sire:"IDLE",waypoints:[{point:"CP-A",time:"8/11 2055LT (1655GMT)"},{point:"CP-S",time:"8/11 2254LT (1854GMT)"},{point:"CP-D",time:"8/12 0027LT (2027GMT)"},{point:"CP-H",time:"8/12 0233LT (2233GMT)"},{point:"CP-Z",time:"8/12 0430LT (0030GMT)"}]},
+  {date:"2026-08-12",vessel:"SINGAPORE PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/12 2012LT (1612GMT)"},{point:"CP-H",time:"8/12 2212LT (1812GMT)"},{point:"CP-D",time:"8/13 0018LT (2018GMT)"},{point:"CP-S",time:"8/13 0127LT (2127GMT)"},{point:"CP-A",time:"8/13 0310LT (2310GMT)"}]},
+  {date:"2026-08-12",vessel:"DOMINICA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"ANGLO E",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/12 2010LT (1610GMT)"},{point:"CP-S",time:"8/12 2210LT (1810GMT)"},{point:"CP-D",time:"8/12 2355LT (1955GMT)"},{point:"CP-H",time:"8/13 0210LT (2210GMT)"},{point:"CP-Z",time:"8/13 0420LT (0020GMT)"}]},
+  {date:"2026-08-13",vessel:"SINGAPORE PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-13",vessel:"ANGOLA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2021",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/13 2000LT (1600GMT)"},{point:"CP-H",time:"8/13 2150LT (1750GMT)"},{point:"CP-D",time:"8/13 2340LT (1940GMT)"},{point:"CP-S",time:"8/14 0115LT (2115GMT)"},{point:"CP-A",time:"8/14 0300LT (2300GMT)"}]},
+  {date:"2026-08-13",vessel:"KUWAIT PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2016",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/13 2030LT (1630GMT)"},{point:"CP-H",time:"8/13 2216LT (1816GMT)"},{point:"CP-D",time:"8/14 0000LT (2000GMT)"},{point:"CP-S",time:"8/14 0146LT (2146GMT)"},{point:"CP-A",time:"8/14 0338LT (2338GMT)"}]},
+  {date:"2026-08-14",vessel:"KUWAIT PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-14",vessel:"SOUTH AFRICA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/14 2030LT (1630GMT)"},{point:"CP-S",time:"8/14 2224LT (1824GMT)"},{point:"CP-D",time:"8/14 2350LT (1950GMT)"},{point:"CP-H",time:"8/15 0225LT (2225GMT)"},{point:"CP-Z",time:"8/15 0430LT (0030GMT)"}]},
+  {date:"2026-08-14",vessel:"FIJI PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"CSM",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/14 2000LT (1600GMT)"},{point:"CP-S",time:"8/14 2128LT (1728GMT)"},{point:"CP-D",time:"8/14 2300LT (1900GMT)"},{point:"CP-H",time:"8/15 0100LT (2100GMT)"},{point:"CP-Z",time:"8/15 0300LT (2300GMT)"}]},
+  {date:"2026-08-15",vessel:"SOUTH AFRICA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-15",vessel:"FIJI PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-15",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2006",manager:"ESM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/15 1958LT (1558GMT)"},{point:"CP-H",time:"8/15 2138LT (1738GMT)"},{point:"CP-D",time:"8/15 2314LT (1914GMT)"},{point:"CP-S",time:"8/16 0025LT (2025GMT)"},{point:"CP-A",time:"8/16 0130LT (2130GMT)"}]},
+  {date:"2026-08-15",vessel:"ALGERIA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2013",manager:"ESM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/15 2047LT (1647GMT)"},{point:"CP-S",time:"8/15 2222LT (1822GMT)"},{point:"CP-D",time:"8/15 2345LT (1945GMT)"},{point:"CP-H",time:"8/16 0154LT (2154GMT)"},{point:"CP-Z",time:"8/16 0345LT (2345GMT)"}]},
+  {date:"2026-08-15",vessel:"MALAYSIA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"SYNERGY",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/15 1900LT (1500GMT)"},{point:"CP-S",time:"8/15 2115LT (1715GMT)"},{point:"CP-D",time:"8/15 2310LT (1910GMT)"},{point:"CP-H",time:"8/16 0200LT (2200GMT)"},{point:"CP-Z",time:"8/16 0438LT (0038GMT)"}]},
+  {date:"2026-08-16",vessel:"ALGERIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-16",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-16",vessel:"MONACO PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"8/16 2020LT (1620GMT)"},{point:"CP-H",time:"8/16 2200LT (1800GMT)"},{point:"CP-D",time:"8/17 0005LT (2005GMT)"},{point:"CP-S",time:"8/17 0115LT (2115GMT)"},{point:"CP-A",time:"8/17 0250LT (2250GMT)"}]},
+  {date:"2026-08-17",vessel:"MONACO PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-17",vessel:"SURINAME PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2009",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/17 2030LT (1630GMT)"},{point:"CP-H",time:"8/17 2235LT (1835GMT)"},{point:"CP-D",time:"8/18 0100LT (2100GMT)"},{point:"CP-S",time:"8/18 0240LT (2240GMT)"},{point:"CP-A",time:"8/18 0450LT (0050GMT)"}]},
+  {date:"2026-08-18",vessel:"SURINAME PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-18",vessel:"SWEDEN PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2010",manager:"CSM",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"8/18 2030LT (1630GMT)"},{point:"CP-H",time:"8/18 2215LT (1815GMT)"},{point:"CP-D",time:"8/19 0025LT (2025GMT)"},{point:"CP-S",time:"8/19 0200LT (2200GMT)"},{point:"CP-A",time:"8/19 0402LT (0002GMT)"}]},
+  {date:"2026-08-18",vessel:"BAHAMAS PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2007",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/18 2000LT (1600GMT)"},{point:"CP-H",time:"8/18 2213LT (1813GMT)"},{point:"CP-D",time:"8/19 0014LT (2014GMT)"},{point:"CP-S",time:"8/19 0145LT (2145GMT)"},{point:"CP-A",time:"8/19 0330LT (2330GMT)"}]},
+  {date:"2026-08-18",vessel:"MOZAMBIQUE B",direction:"EASTBOUND(출항)",source:"excel",built:"2008",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/18 2026LT (1626GMT)"},{point:"CP-S",time:"8/18 2200LT (1800GMT)"},{point:"CP-D",time:"8/18 2316LT (1916GMT)"},{point:"CP-H",time:"8/19 0125LT (2125GMT)"},{point:"CP-Z",time:"8/19 0318LT (2318GMT)"}]},
+  {date:"2026-08-18",vessel:"SINGAPORE PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/18 2000LT (1600GMT)"},{point:"CP-S",time:"8/18 2140LT (1740GMT)"},{point:"CP-D",time:"8/18 2300LT (1900GMT)"},{point:"CP-H",time:"8/19 0137LT (2137GMT)"},{point:"CP-Z",time:"8/19 0350LT (2350GMT)"}]},
+  {date:"2026-08-19",vessel:"MOZAMBIQUE B",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-19",vessel:"BAHAMAS PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-19",vessel:"SWEDEN PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-19",vessel:"SINGAPORE PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-20",vessel:"EGYPT PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/20 1950LT (1550GMT)"},{point:"CP-H",time:"8/20 2130LT (1730GMT)"},{point:"CP-D",time:"8/21 0030LT (2030GMT)"},{point:"CP-S",time:"8/21 0200LT (2200GMT)"},{point:"CP-A",time:"8/21 0348LT (2348GMT)"}]},
+  {date:"2026-08-20",vessel:"BULGARIA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2008",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/20 2000LT (1600GMT)"},{point:"CP-S",time:"8/20 2130LT (1730GMT)"},{point:"CP-D",time:"8/20 2315LT (1915GMT)"},{point:"CP-H",time:"8/21 0130LT (2130GMT)"},{point:"CP-Z",time:"8/21 0345LT (2345GMT)"}]},
+  {date:"2026-08-20",vessel:"SAMOA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2006",manager:"ESM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/20 2200LT (1800GMT)"},{point:"CP-S",time:"8/20 2319LT (1919GMT)"},{point:"CP-D",time:"8/21 0027LT (2027GMT)"},{point:"CP-H",time:"8/21 0218LT (2218GMT)"},{point:"CP-Z",time:"8/21 0405LT (0005GMT)"}]},
+  {date:"2026-08-21",vessel:"EGYPT PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-21",vessel:"BULGARIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-21",vessel:"SAMOA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-21",vessel:"INDONESIA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2005",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/21 1935LT (1535GMT)"},{point:"CP-S",time:"8/21 2203LT (1803GMT)"},{point:"CP-D",time:"8/21 2322LT (1922GMT)"},{point:"CP-H",time:"8/22 0145LT (2145GMT)"},{point:"CP-Z",time:"8/22 0315LT (2315GMT)"}]},
+  {date:"2026-08-21",vessel:"PANAMA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2013",manager:"SYNERGY",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/21 2030LT (1630GMT)"},{point:"CP-S",time:"8/21 2205LT (1805GMT)"},{point:"CP-D",time:"8/21 2316LT (1916GMT)"},{point:"CP-H",time:"8/22 0115LT (2115GMT)"},{point:"CP-Z",time:"8/22 0320LT (2320GMT)"}]},
+  {date:"2026-08-22",vessel:"INDONESIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-22",vessel:"PANAMA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-23",vessel:"MYANMAR PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"FLEET",sire:"NO SIRE",waypoints:[{point:"CP-Z",time:"8/23 1945LT (1545GMT)"},{point:"CP-H",time:"8/23 2142LT (1742GMT)"},{point:"CP-D",time:"8/24 0004LT (2004GMT)"},{point:"CP-S",time:"8/24 0146LT (2146GMT)"},{point:"CP-A",time:"8/24 0330LT (2330GMT)"}]},
+  {date:"2026-08-24",vessel:"MYANMAR PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-24",vessel:"MONGOLIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2009",manager:"FLEET",sire:"NO SIRE",waypoints:[{point:"CP-Z",time:"8/24 1945LT (1545GMT)"},{point:"CP-H",time:"8/24 2120LT (1720GMT)"},{point:"CP-D",time:"8/24 2316LT (1916GMT)"},{point:"CP-S",time:"8/25 0040LT (2040GMT)"},{point:"CP-A",time:"8/25 0225LT (2225GMT)"}]},
+  {date:"2026-08-24",vessel:"PORTUGAL PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"SYNERGY",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/24 2000LT (1600GMT)"},{point:"CP-H",time:"8/24 2142LT (1742GMT)"},{point:"CP-D",time:"8/25 0007LT (2007GMT)"},{point:"CP-S",time:"8/25 0056LT (2056GMT)"},{point:"CP-A",time:"8/25 0229LT (2229GMT)"}]},
+  {date:"2026-08-24",vessel:"MONACO PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"FLEET",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/24 2036LT (1636GMT)"},{point:"CP-S",time:"8/24 2206LT (1806GMT)"},{point:"CP-D",time:"8/24 2321LT (1921GMT)"},{point:"CP-H",time:"8/25 0115LT (2115GMT)"},{point:"CP-Z",time:"8/25 0300LT (2300GMT)"}]},
+  {date:"2026-08-24",vessel:"ANGOLA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2021",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/24 2200LT (1800GMT)"},{point:"CP-S",time:"8/24 2345LT (1945GMT)"},{point:"CP-D",time:"8/25 0100LT (2100GMT)"},{point:"CP-H",time:"8/25 0307LT (2307GMT)"},{point:"CP-Z",time:"8/25 0515LT (0115GMT)"}]},
+  {date:"2026-08-24",vessel:"KUWAIT PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2016",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/24 2148LT (1748GMT)"},{point:"CP-S",time:"8/24 2327LT (1927GMT)"},{point:"CP-D",time:"8/25 0050LT (2050GMT)"},{point:"CP-H",time:"8/25 0245LT (2245GMT)"},{point:"CP-Z",time:"8/25 0420LT (0020GMT)"}]},
+  {date:"2026-08-25",vessel:"KUWAIT PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-25",vessel:"MONACO PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-25",vessel:"MONGOLIA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-25",vessel:"PORTUGAL PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-25",vessel:"SWEDEN PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2010",manager:"CSM",sire:"BUNKER",waypoints:[{point:"CP-A",time:"8/25 1940LT (1540GMT)"},{point:"CP-S",time:"8/25 2125LT (1725GMT)"},{point:"CP-D",time:"8/25 2255LT (1855GMT)"},{point:"CP-H",time:"8/26 0120LT (2120GMT)"},{point:"CP-Z",time:"8/26 0320LT (2320GMT)"}]},
+  {date:"2026-08-26",vessel:"SWEDEN PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-26",vessel:"SINGAPORE PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/26 1940LT (1540GMT)"},{point:"CP-H",time:"8/26 2130LT (1730GMT)"},{point:"CP-D",time:"8/26 2305LT (1905GMT)"},{point:"CP-S",time:"8/27 0040LT (2040GMT)"},{point:"CP-A",time:"8/27 0215LT (2215GMT)"}]},
+  {date:"2026-08-26",vessel:"SENEGAL PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/26 2004LT (1604GMT)"},{point:"CP-H",time:"8/26 2150LT (1750GMT)"},{point:"CP-D",time:"8/26 2345LT (1945GMT)"},{point:"CP-S",time:"8/27 0058LT (2058GMT)"},{point:"CP-A",time:"8/27 0230LT (2230GMT)"}]},
+  {date:"2026-08-26",vessel:"ALGERIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2013",manager:"ESM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/26 2230LT (1830GMT)"},{point:"CP-H",time:"8/27 0010LT (2010GMT)"},{point:"CP-D",time:"8/27 0205LT (2205GMT)"},{point:"CP-S",time:"8/27 0340LT (2340GMT)"},{point:"CP-A",time:"8/27 0450LT (0050GMT)"}]},
+  {date:"2026-08-27",vessel:"SENEGAL PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-27",vessel:"SINGAPORE PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-27",vessel:"ALGERIA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-27",vessel:"PERU PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2009",manager:"SYNERGY",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"8/27 1940LT (1540GMT)"},{point:"CP-H",time:"8/27 2105LT (1705GMT)"},{point:"CP-D",time:"8/27 2300LT (1900GMT)"},{point:"CP-S",time:"8/28 0015LT (2015GMT)"},{point:"CP-A",time:"8/28 0215LT (2215GMT)"}]},
+  {date:"2026-08-27",vessel:"SURINAME PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2009",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/27 1940LT (1540GMT)"},{point:"CP-S",time:"8/27 2145LT (1745GMT)"},{point:"CP-D",time:"8/27 2336LT (1936GMT)"},{point:"CP-H",time:"8/28 0218LT (2218GMT)"},{point:"CP-Z",time:"8/28 0420LT (0020GMT)"}]},
+  {date:"2026-08-28",vessel:"PERU PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-28",vessel:"SURINAME PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-29",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2006",manager:"ESM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/29 1940LT (1540GMT)"},{point:"CP-H",time:"8/29 2126LT (1726GMT)"},{point:"CP-D",time:"8/29 2309LT (1909GMT)"},{point:"CP-S",time:"8/30 0015LT (2015GMT)"},{point:"CP-A",time:"8/30 0118LT (2118GMT)"}]},
+  {date:"2026-08-30",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-30",vessel:"GHANA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2016",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"8/30 1930LT (1530GMT)"},{point:"CP-H",time:"8/30 2101LT (1701GMT)"},{point:"CP-D",time:"8/30 2237LT (1837GMT)"},{point:"CP-S",time:"8/30 2345LT (1945GMT)"},{point:"CP-A",time:"8/31 0116LT (2116GMT)"}]},
+  {date:"2026-08-31",vessel:"GHANA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-08-31",vessel:"EGYPT PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/31 2000LT (1600GMT)"},{point:"CP-S",time:"8/31 2200LT (1800GMT)"},{point:"CP-D",time:"8/31 2308LT (1908GMT)"},{point:"CP-H",time:"9/1 0130LT (2130GMT)"},{point:"CP-Z",time:"9/1 0340LT (2340GMT)"}]},
+  {date:"2026-08-31",vessel:"MYANMAR PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"FLEET",sire:"NO SIRE",waypoints:[{point:"CP-A",time:"8/31 2020LT (1620GMT)"},{point:"CP-S",time:"8/31 2215LT (1815GMT)"},{point:"CP-D",time:"8/31 2354LT (1954GMT)"},{point:"CP-H",time:"9/1 0230LT (2230GMT)"},{point:"CP-Z",time:"9/1 0430LT (0030GMT)"}]},
+  {date:"2026-08-31",vessel:"SENEGAL PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"8/31 1940LT (1540GMT)"},{point:"CP-S",time:"8/31 2110LT (1710GMT)"},{point:"CP-D",time:"8/31 2240LT (1840GMT)"},{point:"CP-H",time:"DNS"},{point:"CP-Z",time:"DNS"}]},
+  {date:"2026-09-01",vessel:"EGYPT PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-09-02",vessel:"TANZANIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2010",manager:"SYNERGY",sire:"BUNKER",waypoints:[{point:"CP-Z",time:"9/2 1550LT (1150GMT)"},{point:"CP-H",time:"9/2 1738LT (1338GMT)"},{point:"CP-D",time:"9/2 1940LT (1540GMT)"},{point:"CP-S",time:"9/2 2100LT (1700GMT)"},{point:"CP-A",time:"9/2 2300LT (1900GMT)"}]},
+  {date:"2026-09-02",vessel:"INDONESIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2005",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"9/2 1551LT (1151GMT)"},{point:"CP-H",time:"9/2 1740LT (1340GMT)"},{point:"CP-D",time:"9/2 1939LT (1539GMT)"},{point:"CP-S",time:"9/2 2104LT (1704GMT)"},{point:"CP-A",time:"9/2 2245LT (1845GMT)"}]},
+  {date:"2026-09-02",vessel:"SINGAPORE PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"9/2 2152LT (1752GMT)"},{point:"CP-S",time:"9/2 2328LT (1928GMT)"},{point:"CP-D",time:"9/3 0100LT (2100GMT)"},{point:"CP-H",time:"9/3 0318LT (2318GMT)"},{point:"CP-Z",time:"9/3 0518LT (0118GMT)"}]},
 ];
 
 // 날짜별 선단 Laden/Ballast 척수 스냅샷 — auto_update.py가 매 실행마다
@@ -3320,30 +3421,82 @@ function buildNoonTable() {
   });
 }
 
+function sohDirLabel(direction) {
+  // 저장된 값은 WESTBOUND/EASTBOUND 그대로 두고(SOH 로그·중복확인 키 안정성),
+  // 화면 표시만 INBOUND(입항)/OUTBOUND(출항)로 바꿔 보여준다
+  return direction.startsWith("WESTBOUND") ? "INBOUND" : "OUTBOUND";
+}
+function sohDirClass(direction) {
+  return direction.startsWith("WESTBOUND") ? "cond-sailing" : "cond-anchored";
+}
+
 function buildSohTable() {
-  const tbody = document.querySelector("#sohTable tbody");
-  tbody.innerHTML = "";
   const q = (document.getElementById("sohSearchInput").value || "").trim().toUpperCase();
   const dirFilter = document.getElementById("sohDirectionSelect").value;
-  // newest-first; SOH_TRANSIT_LOG itself is stored oldest-first (append-only log)
-  const rows = [...SOH_TRANSIT_LOG].reverse()
-    .filter(r => !q || r.vessel.toUpperCase().includes(q))
-    .filter(r => !dirFilter || r.direction.startsWith(dirFilter));
-  rows.forEach((r, pos) => {
-    const tr = document.createElement("tr");
-    const dirClass = r.direction.startsWith("WESTBOUND") ? "cond-sailing" : "cond-anchored";
-    // 저장된 값은 WESTBOUND/EASTBOUND 그대로 두고(SOH 로그·중복확인 키 안정성),
-    // 화면 표시만 INBOUND(입항)/OUTBOUND(출항)로 바꿔 보여준다
-    const dirLabel = r.direction.startsWith("WESTBOUND") ? "INBOUND" : "OUTBOUND";
-    tr.innerHTML = `<td class="num">${rows.length - pos}</td><td class="num">${r.date}</td><td>${r.vessel}</td>`
-      + `<td><span class="swatch-dot ${dirClass}"></span>${dirLabel}</td>`;
-    tbody.appendChild(tr);
+  const matches = r => (!q || r.vessel.toUpperCase().includes(q)) && (!dirFilter || r.direction.startsWith(dirFilter));
+  // newest-first; SOH_TRANSIT_LOG itself is stored oldest-first (append-only log).
+  // "manual"/"excel"(source)은 사람이 확인한 확정 기록으로 메인 테이블에, "auto"(위경도
+  // 자동탐지)는 미확정 참고자료로 접이식 보조 테이블에 분리해 보여준다.
+  const all = [...SOH_TRANSIT_LOG].reverse().filter(matches);
+  const confirmed = all.filter(r => r.source !== "auto");
+  const autoRows = all.filter(r => r.source === "auto");
+
+  const tbody = document.querySelector("#sohTable tbody");
+  tbody.innerHTML = "";
+  confirmed.forEach((r, pos) => {
+    const summaryTr = document.createElement("tr");
+    summaryTr.className = "soh-summary-row";
+    summaryTr.innerHTML = `<td><span class="soh-toggle-icon">▶</span></td>`
+      + `<td class="num">${confirmed.length - pos}</td><td class="num">${r.date}</td><td>${r.vessel}</td>`
+      + `<td><span class="swatch-dot ${sohDirClass(r.direction)}"></span>${sohDirLabel(r.direction)}</td>`
+      + `<td><span class="soh-source-badge">${r.source === "excel" ? "PLAN 엑셀" : "수동확인"}</span></td>`;
+
+    const detailTr = document.createElement("tr");
+    detailTr.className = "soh-detail-row";
+    detailTr.style.display = "none";
+    const wps = r.waypoints || [];
+    const wpHTML = wps.map((wp, i) =>
+      `<div class="soh-wp"><span class="pt">${wp.point}</span><span class="tm">${wp.time}</span></div>`
+      + (i < wps.length - 1 ? `<span class="soh-wp-arrow">→</span>` : "")
+    ).join("");
+    const metaHTML = ["built", "manager", "sire"]
+      .filter(k => r[k])
+      .map(k => `<span>${k.toUpperCase()} <b>${r[k]}</b></span>`).join("");
+    detailTr.innerHTML = `<td colspan="6">`
+      + (metaHTML ? `<div class="soh-detail-meta">${metaHTML}</div>` : "")
+      + (wpHTML ? `<div class="soh-wp-chain">${wpHTML}</div>` : `<span class="select-hint">웨이포인트 상세 없음</span>`)
+      + `</td>`;
+
+    summaryTr.addEventListener("click", () => {
+      const opening = detailTr.style.display === "none";
+      detailTr.style.display = opening ? "" : "none";
+      summaryTr.querySelector(".soh-toggle-icon").textContent = opening ? "▼" : "▶";
+    });
+    tbody.appendChild(summaryTr);
+    tbody.appendChild(detailTr);
   });
+
+  const autoBody = document.querySelector("#sohAutoTable tbody");
+  autoBody.innerHTML = "";
+  autoRows.forEach((r, pos) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="num">${autoRows.length - pos}</td><td class="num">${r.date}</td><td>${r.vessel}</td>`
+      + `<td><span class="swatch-dot ${sohDirClass(r.direction)}"></span>${sohDirLabel(r.direction)}</td>`;
+    autoBody.appendChild(tr);
+  });
+  document.getElementById("sohAutoCount").textContent = autoRows.length;
+
   document.getElementById("sohSummary").textContent =
-    `호르무즈 해협(Strait of Hormuz) 통항 완료 자동 기록 — 총 ${SOH_TRANSIT_LOG.length}건 중 ${rows.length}건 표시 (SVMS 위경도 기준 근사 판정)`;
+    `호르무즈 해협(Strait of Hormuz) 통항 확정 기록 — 총 ${confirmed.length}건 표시 (호르무즈 통항 PLAN 엑셀 기준)`;
 }
 document.getElementById("sohSearchInput").addEventListener("input", buildSohTable);
 document.getElementById("sohDirectionSelect").addEventListener("change", buildSohTable);
+document.getElementById("sohAutoToggleBtn").addEventListener("click", () => {
+  const wrap = document.getElementById("sohAutoWrap");
+  const opening = wrap.style.display === "none";
+  wrap.style.display = opening ? "" : "none";
+  document.getElementById("sohAutoToggleIcon").textContent = opening ? "▼" : "▶";
+});
 
 function buildTrendChart() {
   const wrap = document.getElementById("trendChartWrap");
