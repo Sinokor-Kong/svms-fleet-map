@@ -926,6 +926,22 @@
   .soh-auto-toggle-btn:hover { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-hover); }
   #sohAutoWrap { margin-top: 10px; }
 
+  /* ── 예정 INBOUND/OUTBOUND 선박 리스트 (날짜/ETA 없이 단순 명단) ── */
+  .soh-pending-panels { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+  .soh-pending-panel {
+    flex: 1 1 260px; border: 1px solid var(--border); border-radius: 9px;
+    background: var(--surface-1); padding: 10px 12px;
+  }
+  .soh-pending-title { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+  .soh-pending-title span#sohPendingInboundCount,
+  .soh-pending-title span#sohPendingOutboundCount { color: var(--accent-hover); }
+  .soh-pending-hint { font-weight: 400; color: var(--text-muted); font-size: 10.5px; margin-left: 4px; }
+  .soh-pending-list { list-style: none; margin: 0; padding: 0; max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+  .soh-pending-list li {
+    font-size: 12px; padding: 4px 8px; border-radius: 5px; background: var(--page); color: var(--text-secondary);
+  }
+  .soh-pending-list li.soh-pending-empty { color: var(--text-muted); font-style: italic; background: none; padding-left: 0; }
+
   .trend-legend { display: flex; gap: 16px; margin: 10px 0 4px; }
   .trend-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
   .trend-legend-dot-laden   { background: var(--cond-anchored); }
@@ -1119,6 +1135,20 @@
           </select>
           <input type="text" id="sohSearchInput" class="fleet-search" placeholder="선박명 검색" autocomplete="off" style="max-width:200px;">
         </div>
+
+        <div class="soh-pending-panels">
+          <div class="soh-pending-panel">
+            <div class="soh-pending-title">예정 INBOUND <span id="sohPendingInboundCount">0</span>척
+              <span class="soh-pending-hint">(호르무즈 IN 결정 리스트 - PLAN 엑셀 기준)</span></div>
+            <ul class="soh-pending-list" id="sohPendingInboundList"></ul>
+          </div>
+          <div class="soh-pending-panel">
+            <div class="soh-pending-title">예정 OUTBOUND <span id="sohPendingOutboundCount">0</span>척
+              <span class="soh-pending-hint">(현재 AG(걸프) 내부 전체 선박 - 위치 기준 실시간 계산)</span></div>
+            <ul class="soh-pending-list" id="sohPendingOutboundList"></ul>
+          </div>
+        </div>
+
         <table class="data-table soh-confirmed-table" id="sohTable">
           <thead>
             <tr><th class="soh-toggle-col"></th><th>#</th><th>Date</th><th>Vessel</th><th>Direction</th><th>Source</th></tr>
@@ -1410,6 +1440,12 @@ const SOH_TRANSIT_LOG = [
   {date:"2026-09-02",vessel:"INDONESIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2005",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"9/2 1551LT (1151GMT)"},{point:"CP-H",time:"9/2 1740LT (1340GMT)"},{point:"CP-D",time:"9/2 1939LT (1539GMT)"},{point:"CP-S",time:"9/2 2104LT (1704GMT)"},{point:"CP-A",time:"9/2 2245LT (1845GMT)"}]},
   {date:"2026-09-02",vessel:"SINGAPORE PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"9/2 2152LT (1752GMT)"},{point:"CP-S",time:"9/2 2328LT (1928GMT)"},{point:"CP-D",time:"9/3 0100LT (2100GMT)"},{point:"CP-H",time:"9/3 0318LT (2318GMT)"},{point:"CP-Z",time:"9/3 0518LT (0118GMT)"}]},
 ];
+
+// 예정 INBOUND 선박 리스트 — "호르무즈 통항 PLAN" 엑셀의 "호르무즈 IN" 시트에서
+// import_soh_plan_excel.py가 매번 통째로 갈아끼움(이력 누적 아님, 현재 시점 결정
+// 스냅샷). 걸프 밖에 있다고 전부 INBOUND 대상인 게 아니라, 내부적으로 다음 통항이
+// 결정된 선박만 여기 오른다 - 이 리스트 자체가 그 "결정" 결과.
+const SOH_PENDING_INBOUND = ["TANZANIA PROSPERITY", "FIJI PROSPERITY", "SURINAME PROSPERITY", "KUWAIT PROSPERITY", "BULGARIA PROSPERITY", "INDONESIA PROSPERITY", "TUNISIA PROSPERITY", "MALAYSIA PROSPERITY", "PANAMA PROSPERITY", "MONACO PROSPERITY", "SWEDEN PROSPERITY", "EGYPT PROSPERITY", "MYANMAR PROSPERITY", "SENEGAL PROSPERITY"];
 
 // 날짜별 선단 Laden/Ballast 척수 스냅샷 — auto_update.py가 매 실행마다
 // fleet_status_log.csv 전체 내용으로 이 배열을 재생성함 (하루 1건, 그날 마지막 실행값)
@@ -3421,6 +3457,35 @@ function buildNoonTable() {
   });
 }
 
+// auto_update.py의 hormuz_side()와 동일한 상수/판정 - 걸프(AG) 내부에 있는
+// 선박은 전부 예정 OUTBOUND 대상이라는 걸 실시간 위치로 바로 계산한다.
+const SOH_LAT_MIN = 20.0, SOH_LAT_MAX = 32.0;
+const SOH_GULF_LON_MIN = 47.0, SOH_GULF_LON_MAX = 56.2;
+function isInGulf(lat, lon) {
+  if (lat == null || lon == null) return false;
+  return lat >= SOH_LAT_MIN && lat <= SOH_LAT_MAX && lon >= SOH_GULF_LON_MIN && lon < SOH_GULF_LON_MAX;
+}
+
+function buildSohPendingLists() {
+  const q = (document.getElementById("sohSearchInput").value || "").trim().toUpperCase();
+  const matchesQ = name => !q || name.toUpperCase().includes(q);
+
+  const inboundList = document.getElementById("sohPendingInboundList");
+  const inboundNames = SOH_PENDING_INBOUND.filter(matchesQ);
+  inboundList.innerHTML = inboundNames.length
+    ? inboundNames.map(name => `<li>${name}</li>`).join("")
+    : `<li class="soh-pending-empty">해당 선박 없음</li>`;
+  document.getElementById("sohPendingInboundCount").textContent = inboundNames.length;
+
+  const outboundList = document.getElementById("sohPendingOutboundList");
+  const outboundNames = VESSELS.filter(v => isInGulf(v.lat, v.lon) && matchesQ(v.name))
+    .map(v => v.name).sort();
+  outboundList.innerHTML = outboundNames.length
+    ? outboundNames.map(name => `<li>${name}</li>`).join("")
+    : `<li class="soh-pending-empty">해당 선박 없음</li>`;
+  document.getElementById("sohPendingOutboundCount").textContent = outboundNames.length;
+}
+
 function sohDirLabel(direction) {
   // 저장된 값은 WESTBOUND/EASTBOUND 그대로 두고(SOH 로그·중복확인 키 안정성),
   // 화면 표시만 INBOUND(입항)/OUTBOUND(출항)로 바꿔 보여준다
@@ -3428,6 +3493,17 @@ function sohDirLabel(direction) {
 }
 function sohDirClass(direction) {
   return direction.startsWith("WESTBOUND") ? "cond-sailing" : "cond-anchored";
+}
+// 웨이포인트 통과가 자정을 넘겨 진입일과 완료일이 다른 경우(흔함 - CP-Z~CP-A
+// 통과에 몇 시간 걸림) "2026-06-21 → 2026-06-22"처럼 범위로 보여준다.
+function sohDateRangeLabel(r) {
+  const wps = r.waypoints || [];
+  const last = wps[wps.length - 1];
+  const m = last && last.time && last.time.match(/(\d{1,2})\/(\d{1,2})/);
+  if (!m) return r.date;
+  const endMD = `${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+  if (endMD === r.date.slice(5)) return r.date;
+  return `${r.date} → ${r.date.slice(0, 4)}-${endMD}`;
 }
 
 function buildSohTable() {
@@ -3447,7 +3523,7 @@ function buildSohTable() {
     const summaryTr = document.createElement("tr");
     summaryTr.className = "soh-summary-row";
     summaryTr.innerHTML = `<td><span class="soh-toggle-icon">▶</span></td>`
-      + `<td class="num">${confirmed.length - pos}</td><td class="num">${r.date}</td><td>${r.vessel}</td>`
+      + `<td class="num">${confirmed.length - pos}</td><td class="num">${sohDateRangeLabel(r)}</td><td>${r.vessel}</td>`
       + `<td><span class="swatch-dot ${sohDirClass(r.direction)}"></span>${sohDirLabel(r.direction)}</td>`
       + `<td><span class="soh-source-badge">${r.source === "excel" ? "PLAN 엑셀" : "수동확인"}</span></td>`;
 
@@ -3488,6 +3564,8 @@ function buildSohTable() {
 
   document.getElementById("sohSummary").textContent =
     `호르무즈 해협(Strait of Hormuz) 통항 확정 기록 — 총 ${confirmed.length}건 표시 (호르무즈 통항 PLAN 엑셀 기준)`;
+
+  buildSohPendingLists();
 }
 document.getElementById("sohSearchInput").addEventListener("input", buildSohTable);
 document.getElementById("sohDirectionSelect").addEventListener("change", buildSohTable);
