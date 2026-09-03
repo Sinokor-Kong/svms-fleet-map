@@ -938,11 +938,13 @@
   .soh-pending-hint { font-weight: 400; color: var(--text-muted); font-size: 10.5px; margin-left: 4px; }
   .soh-pending-list { list-style: none; margin: 0; padding: 0; max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
   .soh-pending-list li {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
-    font-size: 12px; padding: 4px 8px; border-radius: 5px; background: var(--page); color: var(--text-secondary);
+    display: flex; flex-direction: column; gap: 2px;
+    font-size: 12px; padding: 5px 8px; border-radius: 5px; background: var(--page); color: var(--text-secondary);
   }
+  .soh-pending-main { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .soh-pending-name { font-weight: 600; color: var(--text-primary); }
-  .soh-pending-meta { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; }
+  .soh-pending-cargo { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+  .soh-pending-meta { font-size: 10.5px; color: var(--text-muted); }
   .soh-pending-list li.soh-pending-empty { color: var(--text-muted); font-style: italic; background: none; padding-left: 0; }
 
   .trend-legend { display: flex; gap: 16px; margin: 10px 0 4px; }
@@ -1448,8 +1450,16 @@ const SOH_TRANSIT_LOG = [
 // import_soh_plan_excel.py가 매번 통째로 갈아끼움(이력 누적 아님, 현재 시점 결정
 // 스냅샷). 걸프 밖에 있다고 전부 INBOUND 대상인 게 아니라, 내부적으로 다음 통항이
 // 결정된 선박만 여기 오른다 - 이 리스트 자체가 그 "결정" 결과.
-// 각 항목: {name, built, manager} - 엑셀의 BUILT/MANAGER 열 그대로.
-const SOH_PENDING_INBOUND = [{name:"FIJI PROSPERITY",built:2011,manager:"CSM"}, {name:"SURINAME PROSPERITY",built:2009,manager:"CSM"}, {name:"KUWAIT PROSPERITY",built:2016,manager:"CSM"}, {name:"BULGARIA PROSPERITY",built:2008,manager:"FLEET"}, {name:"TUNISIA PROSPERITY",built:2011,manager:"CSM"}, {name:"MALAYSIA PROSPERITY",built:2011,manager:"SYNERGY"}, {name:"PANAMA PROSPERITY",built:2013,manager:"SYNERGY"}, {name:"MONACO PROSPERITY",built:2011,manager:"FLEET"}, {name:"SWEDEN PROSPERITY",built:2010,manager:"CSM"}, {name:"EGYPT PROSPERITY",built:2011,manager:"FLEET"}, {name:"MYANMAR PROSPERITY",built:2011,manager:"FLEET"}, {name:"SENEGAL PROSPERITY",built:2011,manager:"CSM"}, {name:"SINGAPORE PROSPERITY",built:2011,manager:"CSM"}];
+// 각 항목: {name, built, manager, charterer, location} - 엑셀의
+// BUILT/MANAGER/용선주/현위치 열 그대로 (Cargo Status는 운항레포트가 더 최신이라
+// VESSELS의 ballast를 이름으로 매칭해서 씀 - buildSohPendingLists() 참고).
+const SOH_PENDING_INBOUND = [{name:"FIJI PROSPERITY",built:2011,manager:"CSM",charterer:"STILL OPEN",location:"SOHAR "}, {name:"SURINAME PROSPERITY",built:2009,manager:"CSM",charterer:"STILL OPEN",location:"FUJAIRAH"}, {name:"KUWAIT PROSPERITY",built:2016,manager:"CSM",charterer:"STILL OPEN",location:"FUJAIRAH"}, {name:"BULGARIA PROSPERITY",built:2008,manager:"FLEET",charterer:"STILL OPEN",location:"SOHAR"}, {name:"TUNISIA PROSPERITY",built:2011,manager:"CSM",charterer:"STILL OPEN",location:"FUJAIRAH"}, {name:"MALAYSIA PROSPERITY",built:2011,manager:"SYNERGY",charterer:"BAHRI",location:"KHOR FAKKAN"}, {name:"PANAMA PROSPERITY",built:2013,manager:"SYNERGY",charterer:"TOTAL",location:"SOHAR"}, {name:"MONACO PROSPERITY",built:2011,manager:"FLEET",charterer:"TOTAL",location:"SOHAR"}, {name:"SWEDEN PROSPERITY",built:2010,manager:"CSM",charterer:"TOTAL",location:"SOHAR"}, {name:"EGYPT PROSPERITY",built:2011,manager:"FLEET",charterer:"RELIANCE",location:"TO INDIA"}, {name:"MYANMAR PROSPERITY",built:2011,manager:"FLEET",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"SENEGAL PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"SOH"}, {name:"SINGAPORE PROSPERITY",built:2011,manager:"CSM",charterer:"TOTAL",location:"SOHAR"}];
+
+// "호르무즈 OUT" 시트에서 뽑은 용선주/현위치 참고정보 - 예정 OUTBOUND 명단 자체의
+// 멤버십은 (위 INBOUND와 달리) 이 시트가 아니라 위치로 그대로 계산하고, 여기선
+// 그 명단에 용선주/현위치만 선박명으로 매칭해 보충한다. import_soh_plan_excel.py가
+// 매번 통째로 갈아끼움. 각 항목: {name, charterer, location}.
+const SOH_OUTBOUND_PLAN_INFO = [{name:"PERU PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"MONGOLIA PROSPERITY",charterer:"GLASFORD",location:"BASRAH"}, {name:"BAHAMAS PROSPERITY",charterer:"TOTAL",location:"BASRAH"}, {name:"FINLAND PROSPERITY",charterer:"TOTAL",location:"DUBAI"}, {name:"PORTUGAL PROSPERITY",charterer:"BAHRI",location:"DUBAI"}, {name:"ALGERIA PROSPERITY",charterer:"BAHRI",location:"BASRAH"}, {name:"SAMOA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"GHANA PROSPERITY",charterer:"BAHRI",location:"DUBAI"}, {name:"TANZANIA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"INDONESIA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}];
 
 // 날짜별 선단 Laden/Ballast 척수 스냅샷 — auto_update.py가 매 실행마다
 // fleet_status_log.csv 전체 내용으로 이 배열을 재생성함 (하루 1건, 그날 마지막 실행값)
@@ -3489,30 +3499,49 @@ function vesselIsInGulf(v, latestByVessel) {
   return isInGulf(v.lat, v.lon); // 확정 통항 이력이 없으면 위치로만 판단
 }
 
-function sohPendingLi(name, built, manager) {
-  const meta = [built, manager].filter(Boolean).join(" · ");
-  return `<li><span class="soh-pending-name">${name}</span>`
-    + (meta ? `<span class="soh-pending-meta">${meta}</span>` : "") + `</li>`;
+function sohPendingLi(v) {
+  const meta = [v.built, v.manager, v.charterer, v.location].filter(Boolean).join(" · ");
+  const cargo = v.cargoStatus
+    ? `<span class="soh-pending-cargo"><span class="swatch-shape ${v.cargoStatus === "Ballast" ? "bl-ballast" : "bl-laden"}"></span>${v.cargoStatus}</span>`
+    : "";
+  return `<li><div class="soh-pending-main"><span class="soh-pending-name">${v.name}</span>${cargo}</div>`
+    + (meta ? `<div class="soh-pending-meta">${meta}</div>` : "") + `</li>`;
 }
 
 function buildSohPendingLists() {
   const q = (document.getElementById("sohSearchInput").value || "").trim().toUpperCase();
   const matchesQ = name => !q || name.toUpperCase().includes(q);
+  // Cargo Status는 늘 운항레포트(VESSELS.ballast) 기준, Charterer/현위치는 늘
+  // PLAN 엑셀(호르무즈 IN/OUT 시트) 기준 - 명단 멤버십과는 별개로 이름 매칭만으로 보충.
+  const vesselByName = {};
+  VESSELS.forEach(v => { vesselByName[v.name] = v; });
+  const outboundInfoByName = {};
+  SOH_OUTBOUND_PLAN_INFO.forEach(v => { outboundInfoByName[v.name] = v; });
 
   const inboundList = document.getElementById("sohPendingInboundList");
-  const inboundRows = SOH_PENDING_INBOUND.filter(v => matchesQ(v.name));
+  const inboundRows = SOH_PENDING_INBOUND.filter(v => matchesQ(v.name))
+    .map(v => ({
+      name: v.name, built: v.built, manager: v.manager,
+      charterer: v.charterer, location: v.location,
+      cargoStatus: vesselByName[v.name]?.ballast || null,
+    }));
   inboundList.innerHTML = inboundRows.length
-    ? inboundRows.map(v => sohPendingLi(v.name, v.built, v.manager)).join("")
+    ? inboundRows.map(sohPendingLi).join("")
     : `<li class="soh-pending-empty">해당 선박 없음</li>`;
   document.getElementById("sohPendingInboundCount").textContent = inboundRows.length;
 
   const latestByVessel = latestConfirmedDirectionByVessel();
   const outboundList = document.getElementById("sohPendingOutboundList");
   const outboundRows = VESSELS.filter(v => vesselIsInGulf(v, latestByVessel) && matchesQ(v.name))
-    .map(v => ({ name: v.name, built: latestByVessel[v.name]?.built, manager: latestByVessel[v.name]?.manager }))
+    .map(v => ({
+      name: v.name,
+      built: latestByVessel[v.name]?.built, manager: latestByVessel[v.name]?.manager,
+      charterer: outboundInfoByName[v.name]?.charterer, location: outboundInfoByName[v.name]?.location,
+      cargoStatus: v.ballast || null,
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
   outboundList.innerHTML = outboundRows.length
-    ? outboundRows.map(v => sohPendingLi(v.name, v.built, v.manager)).join("")
+    ? outboundRows.map(sohPendingLi).join("")
     : `<li class="soh-pending-empty">해당 선박 없음</li>`;
   document.getElementById("sohPendingOutboundCount").textContent = outboundRows.length;
 }
