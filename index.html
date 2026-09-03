@@ -3457,13 +3457,32 @@ function buildNoonTable() {
   });
 }
 
-// auto_update.py의 hormuz_side()와 동일한 상수/판정 - 걸프(AG) 내부에 있는
-// 선박은 전부 예정 OUTBOUND 대상이라는 걸 실시간 위치로 바로 계산한다.
+// auto_update.py의 hormuz_side()와 동일한 상수/판정 - 확정 통항 기록이 아예 없는
+// 선박에 한해서만 실시간 위치의 보조 판정으로 쓴다(아래 vesselIsInGulf 참고).
 const SOH_LAT_MIN = 20.0, SOH_LAT_MAX = 32.0;
 const SOH_GULF_LON_MIN = 47.0, SOH_GULF_LON_MAX = 56.2;
 function isInGulf(lat, lon) {
   if (lat == null || lon == null) return false;
   return lat >= SOH_LAT_MIN && lat <= SOH_LAT_MAX && lon >= SOH_GULF_LON_MIN && lon < SOH_GULF_LON_MAX;
+}
+
+// NOON REPORT 위치는 SVMS 반영이 하루 늦어, 어제 이미 OUTBOUND 통항 완료된 선박도
+// 위치만 보면 여전히 AG 내부로 잡히는 오류가 있었다(확인 사례: SINGAPORE PROSPERITY -
+// 확정 OUTBOUND 기록이 있는데도 위치 기준으로 예정 OUTBOUND에 중복 표시됨). 그래서
+// "확정 통항 기록(source=excel/manual) 중 가장 최근 방향"을 위치보다 우선으로 삼아
+// 현재 AG 내부 여부를 판단하고, 그런 기록이 아예 없는 선박만 위치로 보조 판정한다.
+function latestConfirmedDirectionByVessel() {
+  const map = {};
+  for (const r of SOH_TRANSIT_LOG) {
+    if (r.source !== "excel" && r.source !== "manual") continue;
+    if (!map[r.vessel] || r.date > map[r.vessel].date) map[r.vessel] = r;
+  }
+  return map;
+}
+function vesselIsInGulf(v, latestByVessel) {
+  const latest = latestByVessel[v.name];
+  if (latest) return latest.direction.startsWith("WESTBOUND"); // 마지막 확정 통항이 INBOUND면 아직 AG 내부
+  return isInGulf(v.lat, v.lon); // 확정 통항 이력이 없으면 위치로만 판단
 }
 
 function buildSohPendingLists() {
@@ -3477,8 +3496,9 @@ function buildSohPendingLists() {
     : `<li class="soh-pending-empty">해당 선박 없음</li>`;
   document.getElementById("sohPendingInboundCount").textContent = inboundNames.length;
 
+  const latestByVessel = latestConfirmedDirectionByVessel();
   const outboundList = document.getElementById("sohPendingOutboundList");
-  const outboundNames = VESSELS.filter(v => isInGulf(v.lat, v.lon) && matchesQ(v.name))
+  const outboundNames = VESSELS.filter(v => vesselIsInGulf(v, latestByVessel) && matchesQ(v.name))
     .map(v => v.name).sort();
   outboundList.innerHTML = outboundNames.length
     ? outboundNames.map(name => `<li>${name}</li>`).join("")
