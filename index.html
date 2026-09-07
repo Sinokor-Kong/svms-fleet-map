@@ -3601,7 +3601,9 @@ function sohDateRangeLabel(r) {
 // M/D는 매 지점마다 LT 기준으로 명시돼 있어 자정 넘어가는 문제가 없으므로, LT만으로
 // 계산하면 안전하다.
 function sohParseWpLt(year, timeStr) {
-  const m = timeStr && timeStr.match(/(\d{1,2})\/(\d{1,2})\s+(\d{3,4})LT/);
+  // 엑셀 원본에 종종 "1845 LT"처럼 숫자와 LT 사이에 공백이 섞여 있어(예: GULF SUNRISE
+  // 6/20 EASTBOUND) \s*로 허용한다.
+  const m = timeStr && timeStr.match(/(\d{1,2})\/(\d{1,2})\s+(\d{3,4})\s*LT/);
   if (!m) return null;
   const [, mo, da, lt] = m;
   const hhmm = lt.padStart(4, "0");
