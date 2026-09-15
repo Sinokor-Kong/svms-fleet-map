@@ -307,11 +307,16 @@
   }
   .measure-dot { fill: var(--accent); stroke: var(--surface-1); stroke-width: 1.5; }
   .measure-line { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 3; }
+  /* invisible wide stroke under each visible segment — the 1.5px line itself
+     is too thin to reliably right-click, so this is the real hit target
+     (stroke:transparent, not none, so pointer-events:stroke still fires) */
+  .measure-hit { fill: none; stroke: transparent; stroke-width: 14; cursor: pointer; }
   .measure-label {
     fill: var(--text-primary); font-size: 11px; font-weight: 700;
     text-anchor: middle; paint-order: stroke;
     stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round;
   }
+  .measure-total { font-size: 12.5px; fill: var(--accent-hover); }
   .map-frame {
     position: relative;
     border-radius: 9px;
@@ -1017,7 +1022,6 @@
           </label>
         </div>
         <div class="toolbar-actions">
-          <button type="button" id="measureToggleBtn" class="download-btn" aria-pressed="false" title="지도에서 두 점을 클릭해 거리를 잽니다">📏 거리 측정</button>
           <div class="view-toggle" role="group" aria-label="View">
             <button type="button" data-view="map" aria-pressed="true">Map</button>
             <button type="button" data-view="noon" aria-pressed="false">Noon Report</button>
@@ -1069,6 +1073,7 @@
               <button type="button" id="zoomInBtn" aria-label="Zoom in">+</button>
               <button type="button" id="zoomOutBtn" aria-label="Zoom out">&minus;</button>
               <button type="button" id="zoomResetBtn" aria-label="Reset view">Fit</button>
+              <button type="button" id="measureToggleBtn" aria-pressed="false" aria-label="거리 측정" title="거리 측정 - 지도를 클릭해 점을 찍어 거리를 잽니다 (계속 클릭하면 경로로 이어짐, 구간 선 위에서 우클릭하면 그 구간 삭제, Esc로 종료)">📏</button>
             </div>
           </div>
           <div class="cursor-coords" id="cursorCoords">위도 — · 경도 —</div>
@@ -2210,17 +2215,20 @@ function buildMap() {
   overlay.appendChild(trailPath);
   overlay.appendChild(trailDotsGroup);
 
-  // distance measurement tool — click two points on the map (great-circle
-  // nautical miles, matching the kn/avgSpeed units used everywhere else in
-  // this app) — lives in the same constant-scale overlay as the trail so the
-  // line/dots stay screen-accurate across pan/zoom without re-measuring.
-  const measureLine = el("line", { class: "measure-line" });
-  const measureDotA = el("circle", { class: "measure-dot", r: 4 });
-  const measureDotB = el("circle", { class: "measure-dot", r: 4 });
-  const measureLabel = el("text", { class: "measure-label" });
-  [measureLine, measureDotA, measureDotB, measureLabel].forEach(e => { e.style.display = "none"; overlay.appendChild(e); });
+  // distance measurement tool — click to add points, building a connected
+  // route (great-circle nautical miles, matching the kn/avgSpeed units used
+  // everywhere else in this app). Lives in its own group appended AFTER every
+  // vessel/port marker below (see measureGroup.appendChild below the fleet
+  // loop) so the route always draws on top and is never visually hidden
+  // under a vessel dot. Elements are only rebuilt when the point count
+  // changes (add/remove) — a plain pan/zoom just repositions the existing
+  // ones, same performance approach as the rest of this overlay.
+  const measureGroup = el("g", { id: "measureGroup" });
   let measureActive = false;
-  let measurePoints = []; // [{lon, lat}, ...] up to 2
+  let measurePoints = []; // [{lon, lat}, ...] — open chain, unbounded length
+  let measureSegEls = [];  // [{hit, line, label}, ...] — one per consecutive pair
+  let measureDotEls = [];
+  let measureTotalLabelEl = null;
 
   function haversineNm(a, b) {
     const R_KM = 6371;
@@ -2231,31 +2239,71 @@ function buildMap() {
     return (2 * R_KM * Math.asin(Math.sqrt(h))) / 1.852;
   }
 
-  function updateMeasureOverlay() {
-    if (!measurePoints.length) {
-      [measureLine, measureDotA, measureDotB, measureLabel].forEach(e => e.style.display = "none");
-      return;
+  // right-click on segment i (between measurePoints[i] and [i+1]) drops the
+  // "to" point, so its neighbors simply reconnect directly — same as undoing
+  // that one hop without breaking the rest of the chain.
+  function removeMeasureSegment(i) {
+    measurePoints.splice(i + 1, 1);
+    updateMeasureOverlay();
+  }
+
+  function rebuildMeasureElements() {
+    while (measureGroup.firstChild) measureGroup.removeChild(measureGroup.firstChild);
+    measureSegEls = [];
+    measureDotEls = [];
+    measureTotalLabelEl = null;
+    for (let i = 0; i < measurePoints.length - 1; i++) {
+      const hit = el("line", { class: "measure-hit" });
+      hit.addEventListener("contextmenu", (e) => {
+        e.preventDefault(); e.stopPropagation();
+        removeMeasureSegment(i);
+      });
+      const line = el("line", { class: "measure-line" });
+      const label = el("text", { class: "measure-label" });
+      measureGroup.appendChild(hit);
+      measureGroup.appendChild(line);
+      measureGroup.appendChild(label);
+      measureSegEls.push({ hit, line, label });
     }
+    measurePoints.forEach(() => {
+      const dot = el("circle", { class: "measure-dot", r: 4 });
+      measureGroup.appendChild(dot);
+      measureDotEls.push(dot);
+    });
+    if (measurePoints.length > 1) {
+      measureTotalLabelEl = el("text", { class: "measure-label measure-total" });
+      measureGroup.appendChild(measureTotalLabelEl);
+    }
+  }
+
+  function updateMeasureOverlay() {
+    if (measureSegEls.length !== Math.max(measurePoints.length - 1, 0) || measureDotEls.length !== measurePoints.length) {
+      rebuildMeasureElements();
+    }
+    if (!measurePoints.length) return;
     const toScreen = p => ({ x: X(p.lon) * viewState.k + viewState.tx, y: Y(p.lat) * viewState.k + viewState.ty });
-    const sA = toScreen(measurePoints[0]);
-    measureDotA.setAttribute("cx", sA.x); measureDotA.setAttribute("cy", sA.y);
-    measureDotA.style.display = "";
-    if (measurePoints.length === 2) {
-      const sB = toScreen(measurePoints[1]);
-      measureDotB.setAttribute("cx", sB.x); measureDotB.setAttribute("cy", sB.y);
-      measureDotB.style.display = "";
-      measureLine.setAttribute("x1", sA.x); measureLine.setAttribute("y1", sA.y);
-      measureLine.setAttribute("x2", sB.x); measureLine.setAttribute("y2", sB.y);
-      measureLine.style.display = "";
-      const nm = haversineNm(measurePoints[0], measurePoints[1]);
-      measureLabel.textContent = `${nm.toFixed(1)} nm`;
-      measureLabel.setAttribute("x", (sA.x + sB.x) / 2);
-      measureLabel.setAttribute("y", (sA.y + sB.y) / 2 - 8);
-      measureLabel.style.display = "";
-    } else {
-      measureDotB.style.display = "none";
-      measureLine.style.display = "none";
-      measureLabel.style.display = "none";
+    const screenPts = measurePoints.map(toScreen);
+    let total = 0;
+    measureSegEls.forEach(({ hit, line, label }, i) => {
+      const a = screenPts[i], b = screenPts[i + 1];
+      const segNm = haversineNm(measurePoints[i], measurePoints[i + 1]);
+      total += segNm;
+      [hit, line].forEach(ln => {
+        ln.setAttribute("x1", a.x); ln.setAttribute("y1", a.y);
+        ln.setAttribute("x2", b.x); ln.setAttribute("y2", b.y);
+      });
+      label.setAttribute("x", (a.x + b.x) / 2);
+      label.setAttribute("y", (a.y + b.y) / 2 - 8);
+      label.textContent = `${segNm.toFixed(1)} nm`;
+    });
+    measureDotEls.forEach((dot, i) => {
+      dot.setAttribute("cx", screenPts[i].x); dot.setAttribute("cy", screenPts[i].y);
+    });
+    if (measureTotalLabelEl) {
+      const last = screenPts[screenPts.length - 1];
+      measureTotalLabelEl.setAttribute("x", last.x);
+      measureTotalLabelEl.setAttribute("y", last.y - 16);
+      measureTotalLabelEl.textContent = `총 ${total.toFixed(1)} nm`;
     }
   }
 
@@ -2486,9 +2534,16 @@ function buildMap() {
       // it no longer collapses the current fleet-key filter down to just this
       // one vessel, so glancing at a route doesn't disturb whatever else is
       // currently shown.
-      g.addEventListener("click", (e) => { e.stopPropagation(); focusVessel(i); });
+      g.addEventListener("click", (e) => {
+        if (measureActive) return; // let the click bubble to the frame handler and drop a measurement point instead
+        e.stopPropagation(); focusVessel(i);
+      });
     }
   });
+
+  // appended last (after every vessel/port marker above) so the measurement
+  // route always draws on top and a ship crossing the line never hides it.
+  overlay.appendChild(measureGroup);
 
   // name key, as a slim strip above the map (not overlapping it) — always
   // visible regardless of zoom/pan. Each chip also toggles that vessel on/off
@@ -3113,12 +3168,12 @@ function buildMap() {
   // interaction.
   window.addEventListener("resize", applyTransform);
 
-  // ── distance measurement: click two points, click a third to start over ──
+  // ── distance measurement: each click adds a point, extending the route;
+  // right-click a segment to delete just that one (see removeMeasureSegment) ──
   const measureToggleBtn = document.getElementById("measureToggleBtn");
   function setMeasureActive(active) {
     measureActive = active;
     measureToggleBtn.setAttribute("aria-pressed", String(active));
-    measureToggleBtn.textContent = active ? "측정 중 (ESC로 종료)" : "📏 거리 측정";
     frame.style.cursor = active ? "crosshair" : "";
     if (!active) { measurePoints = []; updateMeasureOverlay(); }
   }
@@ -3131,7 +3186,6 @@ function buildMap() {
     const p = clientToSvg(e.clientX, e.clientY);
     const { lon, lat } = svgPointToLonLat(p.x, p.y);
     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return;
-    if (measurePoints.length >= 2) measurePoints = [];
     measurePoints.push({ lon, lat });
     updateMeasureOverlay();
   });
@@ -3226,6 +3280,11 @@ function buildMap() {
     zoomAt(margin.left + plotW / 2, margin.top + plotH / 2, 1 / 1.4);
   });
   document.getElementById("zoomResetBtn").addEventListener("click", fitToSelection);
+  // the whole cluster (incl. measureToggleBtn) sits inside #mapFrame, so a click
+  // on any of these buttons would otherwise bubble into the frame's own click
+  // handler and — while measuring — get misread as a click-to-add-point on the
+  // map itself, right where the button happens to be drawn.
+  document.querySelector(".zoom-controls").addEventListener("click", (e) => e.stopPropagation());
 
   applyTransform();
 }
