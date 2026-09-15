@@ -3526,7 +3526,7 @@ function isInGulf(lat, lon) {
 // 위치만 보면 여전히 AG 내부로 잡히는 오류가 있었다(확인 사례: SINGAPORE PROSPERITY -
 // 확정 OUTBOUND 기록이 있는데도 위치 기준으로 예정 OUTBOUND에 중복 표시됨). 그래서
 // "확정 통항 기록(source=excel/manual) 중 가장 최근 방향"을 위치보다 우선으로 삼아
-// 현재 AG 내부 여부를 판단하고, 그런 기록이 아예 없는 선박만 위치로 보조 판정한다.
+// 현재 AG 내부 여부를 판단한다.
 function latestConfirmedDirectionByVessel() {
   const map = {};
   for (const r of SOH_TRANSIT_LOG) {
@@ -3538,7 +3538,12 @@ function latestConfirmedDirectionByVessel() {
 function vesselIsInGulf(v, latestByVessel) {
   const latest = latestByVessel[v.name];
   if (latest) return latest.direction.startsWith("WESTBOUND"); // 마지막 확정 통항이 INBOUND면 아직 AG 내부
-  return isInGulf(v.lat, v.lon); // 확정 통항 이력이 없으면 위치로만 판단
+  // 확정 통항 기록(엑셀/수동)이 아예 없으면 위경도만으로 AG 내부 여부를 판단하지 않는다 -
+  // 운항레포트 위경도 오기재 하나가 그대로 "AG 내부"로 오인되는 사례(WEST LOYALTY,
+  // 2026-09-15: 반도를 가로지르는 직선상 320여NM 점프)가 있었고, 그런 오탐을
+  // 위경도만으로 안정적으로 걸러낼 방법이 없어(전 세계 연안 항로 전반에 false
+  // positive 다발 확인) 엑셀로 확정되기 전까지는 보수적으로 "AG 밖"으로 둔다.
+  return false;
 }
 
 function sohPendingLi(v) {
