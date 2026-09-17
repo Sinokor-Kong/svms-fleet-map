@@ -3975,17 +3975,26 @@ function sohEntryTimestamp(r) {
   return new Date(r.date + "T00:00:00Z").getTime();
 }
 
-// 선원서류(Crew List/Crew Consent) 로컬 폴더 링크 - 선박명/날짜(MMDD)로 폴더
-// 경로가 결정되지만, 그 안의 실제 PDF 파일명은 통일돼 있지 않아(사람마다 다르게
-// 저장) 파일을 직접 열 수는 없다 - 대신 "선박명/MMDD/Crew List(또는 Consent)"
-// 폴더까지 여는 링크로, 그 폴더엔 보통 파일이 하나뿐이라 한 번 더 클릭하면 된다.
-// 로컬 PC에서 file://로 이 지도를 열 때만 동작 - GitHub Pages/아티팩트에선
-// 로컬 폴더에 접근할 수 없어 링크가 열리지 않는다.
-const SOH_DOCS_BASE_SEGMENTS = ["SINOKOR", "현안폴더 (251020 생성)", "SOH TRANSIT", "CREW CONSENT"];
+// 선원서류(Crew List/Crew Consent) 폴더 링크 - 선박명/날짜(MMDD)로 폴더 경로가
+// 결정되지만, 그 안의 실제 PDF 파일명은 통일돼 있지 않아(사람마다 다르게 저장)
+// 파일을 직접 열 수는 없다 - 대신 "선박명/MMDD/Crew List(또는 Consent)" 폴더까지
+// 여는 링크로, 그 폴더엔 보통 파일이 하나뿐이라 한 번 더 클릭하면 된다.
+// 이 페이지가 어떻게 열렸는지에 따라 두 곳 중 하나로 연결한다:
+// - 로컬 PC에서 file://로 열었을 때: D: 드라이브의 실제 폴더로 직접 연결.
+// - GitHub Pages/아티팩트(https://)로 열었을 때: 로컬 드라이브에 접근할 수 없으므로
+//   대신 비공개(private) GitHub 저장소 svms-crew-docs의 같은 구조 폴더로 연결 -
+//   개인정보(선원 이름/서명 등)가 담긴 문서라 Public 저장소에는 올리지 않고,
+//   접근 권한이 있는 사람만 로그인해서 볼 수 있는 private repo를 따로 씀.
+const SOH_DOCS_LOCAL_BASE_SEGMENTS = ["SINOKOR", "현안폴더 (251020 생성)", "SOH TRANSIT", "CREW CONSENT"];
+const SOH_DOCS_GITHUB_REPO = "Sinokor-Kong/svms-crew-docs";
 function sohDocFolderUrl(vessel, dateStr, kind) {
   const mmdd = dateStr.slice(5, 7) + dateStr.slice(8, 10);
-  const segments = [...SOH_DOCS_BASE_SEGMENTS, vessel, mmdd, kind];
-  return "file:///D:/" + segments.map(encodeURIComponent).join("/") + "/";
+  if (location.protocol === "file:") {
+    const segments = [...SOH_DOCS_LOCAL_BASE_SEGMENTS, vessel, mmdd, kind];
+    return "file:///D:/" + segments.map(encodeURIComponent).join("/") + "/";
+  }
+  const segments = [vessel, mmdd, kind];
+  return `https://github.com/${SOH_DOCS_GITHUB_REPO}/tree/main/` + segments.map(encodeURIComponent).join("/");
 }
 function buildSohTable() {
   const q = (document.getElementById("sohSearchInput").value || "").trim().toUpperCase();
@@ -4010,8 +4019,8 @@ function buildSohTable() {
       + `<td><span class="swatch-dot ${sohDirClass(r.direction)}"></span>${sohDirLabel(r.direction)}</td>`
       + `<td><span class="soh-source-badge">${r.source === "excel" ? "PLAN 엑셀" : "수동확인"}</span></td>`
       + `<td class="soh-doc-links">`
-      + `<a href="${sohDocFolderUrl(r.vessel, r.date, "Crew List")}" onclick="event.stopPropagation()" title="로컬 폴더 열기 (file://) - GitHub Pages/아티팩트에서는 열리지 않음">Crew List</a>`
-      + ` · <a href="${sohDocFolderUrl(r.vessel, r.date, "Crew Consent")}" onclick="event.stopPropagation()" title="로컬 폴더 열기 (file://) - GitHub Pages/아티팩트에서는 열리지 않음">Crew Consent</a>`
+      + `<a href="${sohDocFolderUrl(r.vessel, r.date, "Crew List")}" onclick="event.stopPropagation()" target="_blank" rel="noopener" title="문서 폴더 열기 (로컬에서는 D: 드라이브, 웹에서는 비공개 GitHub 저장소 - 접근 권한 필요)">Crew List</a>`
+      + ` · <a href="${sohDocFolderUrl(r.vessel, r.date, "Crew Consent")}" onclick="event.stopPropagation()" target="_blank" rel="noopener" title="문서 폴더 열기 (로컬에서는 D: 드라이브, 웹에서는 비공개 GitHub 저장소 - 접근 권한 필요)">Crew Consent</a>`
       + `</td>`;
 
     const detailTr = document.createElement("tr");
