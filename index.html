@@ -3707,14 +3707,27 @@ function sohDurationLabel(r) {
   return `${Math.floor(totalMin / 60)}h ${String(totalMin % 60).padStart(2, "0")}m`;
 }
 
+// 통항의 "진입 시각" - 방향에 관계없이 그 통항의 첫 웨이포인트(예: WESTBOUND는
+// CP-Z, EASTBOUND는 CP-A) 통과시각. 웨이포인트가 없는(auto) 기록은 날짜만 있으므로
+// 그 날짜 00:00을 기준으로 삼는다.
+function sohEntryTimestamp(r) {
+  const wps = r.waypoints || [];
+  if (wps.length) {
+    const year = parseInt(r.date.slice(0, 4), 10);
+    const t = sohParseWpLt(year, wps[0].time);
+    if (t) return t.getTime();
+  }
+  return new Date(r.date + "T00:00:00Z").getTime();
+}
 function buildSohTable() {
   const q = (document.getElementById("sohSearchInput").value || "").trim().toUpperCase();
   const dirFilter = document.getElementById("sohDirectionSelect").value;
   const matches = r => (!q || r.vessel.toUpperCase().includes(q)) && (!dirFilter || r.direction.startsWith(dirFilter));
-  // newest-first; SOH_TRANSIT_LOG itself is stored oldest-first (append-only log).
+  // 진입 시각 기준 최신순 정렬 - SOH_TRANSIT_LOG 자체의 저장 순서(추가된 순서)는
+  // 엑셀 시트 배열 순서를 그대로 따라서 실제 통항 시각순과 어긋날 수 있다.
   // "manual"/"excel"(source)은 사람이 확인한 확정 기록으로 메인 테이블에, "auto"(위경도
   // 자동탐지)는 미확정 참고자료로 접이식 보조 테이블에 분리해 보여준다.
-  const all = [...SOH_TRANSIT_LOG].reverse().filter(matches);
+  const all = SOH_TRANSIT_LOG.filter(matches).sort((a, b) => sohEntryTimestamp(b) - sohEntryTimestamp(a));
   const confirmed = all.filter(r => r.source !== "auto");
   const autoRows = all.filter(r => r.source === "auto");
 
