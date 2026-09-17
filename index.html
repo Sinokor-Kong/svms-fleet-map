@@ -4193,7 +4193,14 @@ function sohDocFolderUrl(vessel, dateStr, kind) {
   }
   const filename = SOH_DOC_FILES_GITHUB[key];
   const segments = [vessel, mmdd, kind, ...(filename ? [filename] : [])];
-  const viewMode = filename ? "blob" : "tree";
+  // "raw" (not "blob") so a known file opens straight in the browser's own PDF
+  // viewer instead of GitHub's file-preview page - github.com checks the
+  // viewer's own login session for private-repo access before redirecting to
+  // the actual raw bytes, so this needs no embedded token (confirmed 2026-09-17:
+  // unauthenticated request to this exact path 404s, same as any private-repo
+  // page would). "tree" (folder) has no such raw equivalent, so keep it as the
+  // fallback when the exact filename isn't known yet.
+  const viewMode = filename ? "raw" : "tree";
   return `https://github.com/${SOH_DOCS_GITHUB_REPO}/${viewMode}/main/` + segments.map(encodeURIComponent).join("/");
 }
 function buildSohTable() {
