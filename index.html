@@ -374,6 +374,50 @@
   .zoom-controls button:last-child { border-bottom: none; }
   .zoom-controls button:hover { background: var(--accent-wash); color: var(--accent-hover); }
   .zoom-controls button#zoomResetBtn { font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; padding: 0 4px; }
+  #gotoCoordBtn[aria-pressed="true"] {
+    color: var(--accent-contrast); background: var(--accent);
+  }
+  .goto-coord-panel {
+    position: absolute;
+    top: 10px;
+    right: 52px;
+    z-index: 5;
+    width: 190px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .goto-coord-panel[hidden] { display: none; }
+  .goto-coord-row { display: flex; flex-direction: column; gap: 6px; }
+  .goto-coord-row label {
+    display: flex; flex-direction: column; gap: 2px;
+    font-size: 10.5px; color: var(--text-secondary);
+  }
+  .goto-coord-row input {
+    font: inherit; font-size: 12.5px; color: var(--text-primary);
+    background: var(--page); border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 8px;
+  }
+  .goto-coord-row input:focus { outline: none; border-color: var(--accent); }
+  .goto-coord-hint { margin: 0; font-size: 10px; color: var(--text-muted); }
+  .goto-coord-panel.goto-coord-error .goto-coord-hint { color: var(--series-1); }
+  .goto-coord-actions { display: flex; align-items: center; gap: 6px; }
+  .goto-coord-actions button {
+    font: inherit; font-size: 11.5px; font-weight: 600;
+    color: var(--text-secondary); background: transparent;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 9px; cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  }
+  .goto-coord-actions button:hover { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-hover); }
+  .goto-coord-actions button#gotoCoordCloseBtn { margin-left: auto; padding: 5px 8px; font-weight: 700; }
+  .coord-pin-ring { fill: none; stroke: var(--series-1); stroke-width: 1.5; }
+  .coord-pin-dot { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 1.2; }
   .content-row {
     display: flex;
     align-items: flex-start;
@@ -1074,6 +1118,19 @@
               <button type="button" id="zoomOutBtn" aria-label="Zoom out">&minus;</button>
               <button type="button" id="zoomResetBtn" aria-label="Reset view">Fit</button>
               <button type="button" id="measureToggleBtn" aria-pressed="false" aria-label="거리 측정" title="거리 측정 - 지도를 클릭해 점을 찍어 거리를 잽니다 (계속 클릭하면 경로로 이어짐, 구간 선 위에서 우클릭하면 그 구간 삭제, Esc로 종료)">📏</button>
+              <button type="button" id="gotoCoordBtn" aria-pressed="false" aria-label="위도/경도로 이동" title="위도/경도를 입력해 그 위치를 지도에 표시합니다">📍</button>
+            </div>
+            <div class="goto-coord-panel" id="gotoCoordPanel" hidden>
+              <div class="goto-coord-row">
+                <label>위도 (N +, S -)<input type="number" id="gotoLatInput" step="any" min="-90" max="90" placeholder="예: 25.2048"></label>
+                <label>경도 (E +, W -)<input type="number" id="gotoLonInput" step="any" min="-180" max="180" placeholder="예: 55.2708"></label>
+              </div>
+              <p class="goto-coord-hint" id="gotoCoordHint">십진수 좌표를 입력하세요</p>
+              <div class="goto-coord-actions">
+                <button type="button" id="gotoCoordGoBtn">이동</button>
+                <button type="button" id="gotoCoordClearBtn">지우기</button>
+                <button type="button" id="gotoCoordCloseBtn" aria-label="닫기">×</button>
+              </div>
             </div>
           </div>
           <div class="cursor-coords" id="cursorCoords">위도 — · 경도 —</div>
@@ -2391,6 +2448,54 @@ function buildMap() {
 
   const overlayItems = []; // { ox, oy, apply(sx, sy) }
 
+  // go-to-coordinate marker — user types a lat/lon and gets a pin dropped
+  // there. Lives in its own group appended after the measurement tool (see
+  // overlay.appendChild(coordPinGroup) below the fleet loop) and participates
+  // in the standard overlayItems pan/zoom update loop like a vessel/port marker.
+  const coordPinGroup = el("g", { id: "coordPinGroup" });
+  coordPinGroup.style.display = "none";
+  const coordPinRing = el("circle", { class: "coord-pin-ring", r: 9 });
+  const coordPinDot = el("circle", { class: "coord-pin-dot", r: 3 });
+  const coordPinLabel = el("text", { class: "measure-label" });
+  coordPinGroup.appendChild(coordPinRing);
+  coordPinGroup.appendChild(coordPinDot);
+  coordPinGroup.appendChild(coordPinLabel);
+  let coordPinItem = null; // present in overlayItems only while the pin is shown
+
+  function clearCoordPin() {
+    coordPinGroup.style.display = "none";
+    if (coordPinItem) {
+      const idx = overlayItems.indexOf(coordPinItem);
+      if (idx !== -1) overlayItems.splice(idx, 1);
+      coordPinItem = null;
+    }
+  }
+
+  function goToCoord(lat, lon) {
+    const ox = X(lon), oy = Y(lat);
+    coordPinLabel.textContent = `${toDMS(lat, "N", "S")}, ${toDMS(lon, "E", "W")}`;
+    if (!coordPinItem) {
+      coordPinItem = {
+        ox, oy,
+        apply(sx, sy) {
+          coordPinRing.setAttribute("cx", sx); coordPinRing.setAttribute("cy", sy);
+          coordPinDot.setAttribute("cx", sx); coordPinDot.setAttribute("cy", sy);
+          coordPinLabel.setAttribute("x", sx); coordPinLabel.setAttribute("y", sy - 14);
+        },
+      };
+      overlayItems.push(coordPinItem);
+    } else {
+      coordPinItem.ox = ox; coordPinItem.oy = oy;
+    }
+    coordPinGroup.style.display = "";
+    // zoom in enough to actually see the pin if currently zoomed further out
+    // than that, but don't zoom OUT if the user was already closer in
+    const k = Math.max(viewState.k, 60);
+    const clamped = clampPan(k, frameCx - k * ox, frameCy - k * oy);
+    viewState.k = k; viewState.tx = clamped.tx; viewState.ty = clamped.ty;
+    applyTransform();
+  }
+
   // reference ports — toggled on/off as a group via the "Port" legend button
   const portMarkers = [];
   REF_PORTS.forEach(p => {
@@ -2626,6 +2731,7 @@ function buildMap() {
   // appended last (after every vessel/port marker above) so the measurement
   // route always draws on top and a ship crossing the line never hides it.
   overlay.appendChild(measureGroup);
+  overlay.appendChild(coordPinGroup);
 
   // name key, as a slim strip above the map (not overlapping it) — always
   // visible regardless of zoom/pan. Each chip also toggles that vessel on/off
@@ -3272,6 +3378,46 @@ function buildMap() {
     updateMeasureOverlay();
   });
 
+  // ── go-to-coordinate: type a lat/lon in the panel below the ruler icon,
+  // click Go to drop a pin there and center the map on it ──
+  const gotoCoordBtn = document.getElementById("gotoCoordBtn");
+  const gotoCoordPanel = document.getElementById("gotoCoordPanel");
+  const gotoCoordHint = document.getElementById("gotoCoordHint");
+  const gotoLatInput = document.getElementById("gotoLatInput");
+  const gotoLonInput = document.getElementById("gotoLonInput");
+  function setGotoPanelOpen(open) {
+    gotoCoordPanel.hidden = !open;
+    gotoCoordBtn.setAttribute("aria-pressed", String(open));
+    if (open) gotoLatInput.focus();
+  }
+  gotoCoordBtn.addEventListener("click", () => setGotoPanelOpen(gotoCoordPanel.hidden));
+  document.getElementById("gotoCoordCloseBtn").addEventListener("click", () => setGotoPanelOpen(false));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !gotoCoordPanel.hidden) setGotoPanelOpen(false);
+  });
+  function submitGotoCoord() {
+    const lat = parseFloat(gotoLatInput.value);
+    const lon = parseFloat(gotoLonInput.value);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      gotoCoordPanel.classList.add("goto-coord-error");
+      gotoCoordHint.textContent = "위도(-90~90), 경도(-180~180) 범위의 십진수를 입력하세요";
+      return;
+    }
+    gotoCoordPanel.classList.remove("goto-coord-error");
+    gotoCoordHint.textContent = "십진수 좌표를 입력하세요";
+    goToCoord(lat, lon);
+  }
+  document.getElementById("gotoCoordGoBtn").addEventListener("click", submitGotoCoord);
+  document.getElementById("gotoCoordClearBtn").addEventListener("click", () => {
+    clearCoordPin();
+    gotoLatInput.value = ""; gotoLonInput.value = "";
+    gotoCoordPanel.classList.remove("goto-coord-error");
+    gotoCoordHint.textContent = "십진수 좌표를 입력하세요";
+  });
+  [gotoLatInput, gotoLonInput].forEach(inp => inp.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submitGotoCoord();
+  }));
+
   // ── touch: single-finger drag-pan + two-finger pinch-zoom, mirroring the
   // mouse handlers above. `.map-frame` has touch-action:none (CSS) so the
   // browser never intercepts these for its own page-scroll/pinch-zoom — which
@@ -3367,6 +3513,11 @@ function buildMap() {
   // handler and — while measuring — get misread as a click-to-add-point on the
   // map itself, right where the button happens to be drawn.
   document.querySelector(".zoom-controls").addEventListener("click", (e) => e.stopPropagation());
+  // same reasoning as the zoom-controls cluster above - this panel also sits
+  // inside #mapFrame, so clicks on its inputs/buttons would otherwise bubble
+  // into the frame's click handler too.
+  document.getElementById("gotoCoordPanel").addEventListener("click", (e) => e.stopPropagation());
+  document.getElementById("gotoCoordPanel").addEventListener("mousedown", (e) => e.stopPropagation());
 
   applyTransform();
 }
