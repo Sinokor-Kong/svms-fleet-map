@@ -398,12 +398,15 @@
     display: flex; flex-direction: column; gap: 2px;
     font-size: 10.5px; color: var(--text-secondary);
   }
-  .goto-coord-row input {
+  .goto-coord-field { display: flex; gap: 5px; }
+  .goto-coord-row input, .goto-coord-row select {
     font: inherit; font-size: 12.5px; color: var(--text-primary);
     background: var(--page); border: 1px solid var(--border); border-radius: 6px;
     padding: 5px 8px;
   }
-  .goto-coord-row input:focus { outline: none; border-color: var(--accent); }
+  .goto-coord-row input { flex: 1 1 auto; min-width: 0; }
+  .goto-coord-row select { flex: none; width: 48px; cursor: pointer; }
+  .goto-coord-row input:focus, .goto-coord-row select:focus { outline: none; border-color: var(--accent); }
   .goto-coord-hint { margin: 0; font-size: 10px; color: var(--text-muted); }
   .goto-coord-panel.goto-coord-error .goto-coord-hint { color: var(--series-1); }
   .goto-coord-actions { display: flex; align-items: center; gap: 6px; }
@@ -1122,8 +1125,24 @@
             </div>
             <div class="goto-coord-panel" id="gotoCoordPanel" hidden>
               <div class="goto-coord-row">
-                <label>위도 (N +, S -)<input type="number" id="gotoLatInput" step="any" min="-90" max="90" placeholder="예: 25.2048"></label>
-                <label>경도 (E +, W -)<input type="number" id="gotoLonInput" step="any" min="-180" max="180" placeholder="예: 55.2708"></label>
+                <label>위도
+                  <div class="goto-coord-field">
+                    <input type="number" id="gotoLatInput" step="any" min="0" max="90" placeholder="예: 25.2048">
+                    <select id="gotoLatDirSelect" aria-label="북/남">
+                      <option value="N">N</option>
+                      <option value="S">S</option>
+                    </select>
+                  </div>
+                </label>
+                <label>경도
+                  <div class="goto-coord-field">
+                    <input type="number" id="gotoLonInput" step="any" min="0" max="180" placeholder="예: 55.2708">
+                    <select id="gotoLonDirSelect" aria-label="동/서">
+                      <option value="E">E</option>
+                      <option value="W">W</option>
+                    </select>
+                  </div>
+                </label>
               </div>
               <p class="goto-coord-hint" id="gotoCoordHint">십진수 좌표를 입력하세요</p>
               <div class="goto-coord-actions">
@@ -3385,6 +3404,8 @@ function buildMap() {
   const gotoCoordHint = document.getElementById("gotoCoordHint");
   const gotoLatInput = document.getElementById("gotoLatInput");
   const gotoLonInput = document.getElementById("gotoLonInput");
+  const gotoLatDirSelect = document.getElementById("gotoLatDirSelect");
+  const gotoLonDirSelect = document.getElementById("gotoLonDirSelect");
   function setGotoPanelOpen(open) {
     gotoCoordPanel.hidden = !open;
     gotoCoordBtn.setAttribute("aria-pressed", String(open));
@@ -3396,15 +3417,17 @@ function buildMap() {
     if (e.key === "Escape" && !gotoCoordPanel.hidden) setGotoPanelOpen(false);
   });
   function submitGotoCoord() {
-    const lat = parseFloat(gotoLatInput.value);
-    const lon = parseFloat(gotoLonInput.value);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    const latAbs = parseFloat(gotoLatInput.value);
+    const lonAbs = parseFloat(gotoLonInput.value);
+    if (!Number.isFinite(latAbs) || !Number.isFinite(lonAbs) || latAbs < 0 || latAbs > 90 || lonAbs < 0 || lonAbs > 180) {
       gotoCoordPanel.classList.add("goto-coord-error");
-      gotoCoordHint.textContent = "위도(-90~90), 경도(-180~180) 범위의 십진수를 입력하세요";
+      gotoCoordHint.textContent = "위도(0~90), 경도(0~180) 범위의 숫자를 입력하세요";
       return;
     }
     gotoCoordPanel.classList.remove("goto-coord-error");
     gotoCoordHint.textContent = "십진수 좌표를 입력하세요";
+    const lat = gotoLatDirSelect.value === "S" ? -latAbs : latAbs;
+    const lon = gotoLonDirSelect.value === "W" ? -lonAbs : lonAbs;
     goToCoord(lat, lon);
   }
   document.getElementById("gotoCoordGoBtn").addEventListener("click", submitGotoCoord);
