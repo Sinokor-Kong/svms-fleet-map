@@ -3975,26 +3975,226 @@ function sohEntryTimestamp(r) {
   return new Date(r.date + "T00:00:00Z").getTime();
 }
 
-// 선원서류(Crew List/Crew Consent) 폴더 링크 - 선박명/날짜(MMDD)로 폴더 경로가
-// 결정되지만, 그 안의 실제 PDF 파일명은 통일돼 있지 않아(사람마다 다르게 저장)
-// 파일을 직접 열 수는 없다 - 대신 "선박명/MMDD/Crew List(또는 Consent)" 폴더까지
-// 여는 링크로, 그 폴더엔 보통 파일이 하나뿐이라 한 번 더 클릭하면 된다.
+// 선원서류(Crew List/Crew Consent) 링크 - 선박명/날짜(MMDD)로 폴더 경로는 알 수
+// 있지만, 그 안의 실제 PDF 파일명은 통일돼 있지 않다(사람마다 다르게 저장). 파일명을
+// 브라우저가 실시간으로 알아낼 방법이 없어(로컬은 파일시스템 접근 불가, GitHub는
+// private repo라 브라우저에서 토큰 없이 API를 못 씀) - 대신 sync_soh_crew_docs.py를
+// 돌릴 때마다 두 곳(로컬 D: 드라이브 / GitHub 저장소)을 미리 조회해 아래 두 표에
+// 정적으로 박아넣는다. 표에 없으면(아직 그 파일이 없거나, 한 폴더에 파일이 여러
+// 개라 어느 게 맞는지 확정할 수 없는 경우) 폴더까지만 여는 링크로 대신한다.
+const SOH_DOC_FILES_LOCAL = {
+  "ALGERIA PROSPERITY|0810|Crew Consent": "Crew consent Algeria Prosperity_20260810 (1).pdf",
+  "ALGERIA PROSPERITY|0810|Crew List": "Algeria Prosperity Crew List.pdf",
+  "ALGERIA PROSPERITY|0815|Crew Consent": "Crew consent Algeria Prosperity_20260810 (1).pdf",
+  "ALGERIA PROSPERITY|0815|Crew List": "Algeria Prosperity Crew List.pdf",
+  "ALGERIA PROSPERITY|0826|Crew Consent": "ALGERIA PROSPERITY - CREW CONSENT FORM.pdf",
+  "ALGERIA PROSPERITY|0826|Crew List": "M.T. ALGERIA PROSPERITY - CREW LIST.pdf",
+  "ALGERIA PROSPERITY|0910|Crew Consent": "CREW CONSENT FORM-1 (2).pdf",
+  "ALGERIA PROSPERITY|0910|Crew List": "ALGERIA PROSPERITY - CREW LIST.pdf",
+  "ANGOLA PROSPERITY|0813|Crew Consent": "ANGOLA PROSPERITY Crew Consent.pdf",
+  "ANGOLA PROSPERITY|0813|Crew List": "ANGOLA PROSPERITY Crew List.pdf",
+  "ANGOLA PROSPERITY|0824|Crew Consent": "Signed Individual Crew Consent Form dd 24-Aug-2026.pdf",
+  "ANGOLA PROSPERITY|0824|Crew List": "Angola Prosperity_Crew List.pdf",
+  "BAHAMAS PROSPERITY|0810|Crew Consent": "ALL crew constant form 10-08-2026.pdf",
+  "BAHAMAS PROSPERITY|0810|Crew List": "Bahamas Prosperity - Crew list (1).pdf",
+  "BAHAMAS PROSPERITY|0818|Crew Consent": "Bahamas Prosperity - Crew consent.pdf",
+  "BAHAMAS PROSPERITY|0818|Crew List": "Bahamas Prosperity - Crew list.pdf",
+  "BAHAMAS PROSPERITY|0905|Crew Consent": "bahamas Crew Consent.pdf",
+  "BAHAMAS PROSPERITY|0905|Crew List": "bahamas Crew List.pdf",
+  "BARBADOS PROSPERITY|0810|Crew Consent": "Crew Consent Form.pdf",
+  "BARBADOS PROSPERITY|0810|Crew List": "Barbados Prosperity - Crew List (1).pdf",
+  "BRUNEI PROSPERITY|0811|Crew Consent": "Crew consent (1).pdf",
+  "BRUNEI PROSPERITY|0811|Crew List": "CREW LIST _TEAM A.pdf",
+  "BULGARIA PROSPERITY|0820|Crew Consent": "Crew Consent (3).pdf",
+  "BULGARIA PROSPERITY|0820|Crew List": "Crew List.pdf",
+  "BULGARIA PROSPERITY|0904|Crew Consent": "bulgaria Crew Consent.pdf",
+  "BULGARIA PROSPERITY|0904|Crew List": "Bulgaria Crew List.pdf",
+  "BULGARIA PROSPERITY|0912|Crew Consent": "Crew consent (10).pdf",
+  "BULGARIA PROSPERITY|0912|Crew List": "Crew list (7).pdf",
+  "CROATIA PROSPERITY|0908|Crew Consent": "Crew consent (2).pdf",
+  "CROATIA PROSPERITY|0908|Crew List": "Crew List-2.pdf",
+  "DOMINICA PROSPERITY|0812|Crew Consent": "Consent Form of Crew.pdf",
+  "DOMINICA PROSPERITY|0812|Crew List": "Dominica Prosperity Crew List.pdf",
+  "EGYPT PROSPERITY|0820|Crew Consent": "Crew Consent Individual Forms - 20 AUG 2026.pdf",
+  "EGYPT PROSPERITY|0820|Crew List": "DEP IMO CREW LIST - FUJAIRAH 20 AUG 2026 .pdf",
+  "EGYPT PROSPERITY|0831|Crew Consent": "CREW CONSENT 30-AUG-2026 (3).pdf",
+  "EGYPT PROSPERITY|0831|Crew List": "ARR IMO CREW LIST.pdf",
+  "EGYPT PROSPERITY|0904|Crew Consent": "Crew Consent  Form.pdf",
+  "EGYPT PROSPERITY|0904|Crew List": "FAL Form 5 _Crew List  Egypt Prosperity.pdf",
+  "EGYPT PROSPERITY|0911|Crew Consent": "CREW CONSENT FORM 100926 (1).pdf",
+  "EGYPT PROSPERITY|0911|Crew List": "5 - FAL Form 5 - Arrival dubai (1).pdf",
+  "FIJI PROSPERITY|0807|Crew Consent": "pc278_260807-152043-69e5.pdf",
+  "FIJI PROSPERITY|0807|Crew List": "Crew list.pdf",
+  "FIJI PROSPERITY|0814|Crew Consent": "CREW CONSENT OUTBOUND SOH 1.PDF",
+  "FIJI PROSPERITY|0814|Crew List": "Fiji Prosperity Crew List.pdf",
+  "FIJI PROSPERITY|0908|Crew Consent": "Fiji Prosperity - Crew Consent.pdf",
+  "FIJI PROSPERITY|0908|Crew List": "Fiji Prosperity - Crew List 1.pdf",
+  "FIJI PROSPERITY|0915|Crew Consent": "OUTBOUND CREW CONSENT.pdf",
+  "FIJI PROSPERITY|0915|Crew List": "Fiji Crew List.pdf",
+  "FINLAND PROSPERITY|0906|Crew Consent": "Crew Consent Foam MT Finland Prosperity20260828_19275755 (2).pdf",
+  "FINLAND PROSPERITY|0906|Crew List": "CREW LIST LAST UPDATED (2).pdf",
+  "GERMANY B|0807|Crew Consent": "CREW CONSENT FORM_TEAM A_ GERMANY B.pdf",
+  "GERMANY B|0807|Crew List": "Germany B - Crew list.pdf",
+  "GHANA PROSPERITY|0830|Crew Consent": "GHANA PROSPERITY CONSENT1.pdf",
+  "GHANA PROSPERITY|0830|Crew List": "GHANA PR CREW LIST.pdf",
+  "GHANA PROSPERITY|0908|Crew Consent": "Ghana Prosperity - SoH Outbound Crew Consent.pdf",
+  "GHANA PROSPERITY|0908|Crew List": "Crew list Departure.pdf",
+  "INDONESIA PROSPERITY|0808|Crew Consent": "pc278_260807-150145-69dc.pdf",
+  "INDONESIA PROSPERITY|0808|Crew List": "Crew-List-FAL-Form-5 Departure.pdf",
+  "INDONESIA PROSPERITY|0821|Crew Consent": "CREW CONSENT FORM (SOH) OUTBOUND .pdf",
+  "INDONESIA PROSPERITY|0821|Crew List": "Crew List.pdf",
+  "INDONESIA PROSPERITY|0902|Crew Consent": "CREW CONSENT FORM 31.08.2026.pdf",
+  "INDONESIA PROSPERITY|0902|Crew List": "Indonesia Crew List.pdf",
+  "INDONESIA PROSPERITY|0909|Crew Consent": "CREW CONSENT FORM 07.09.2026.pdf",
+  "INDONESIA PROSPERITY|0909|Crew List": "Crew List_Indonesia Prosperity.pdf",
+  "JAMAICA PROSPERITY|0728|Crew Consent": "CREW CONSENT FORMS_JAMAICA PROSPERITY 28.07.2026.pdf",
+  "JAMAICA PROSPERITY|0728|Crew List": "IMMIGRATION CREW LIST - JAMAICA PROSPERITY - Departure.pdf",
+  "JAMAICA PROSPERITY|0810|Crew Consent": "CREW CONCENT FORM 07-AUG-2026.pdf",
+  "JAMAICA PROSPERITY|0810|Crew List": "JAMAICA PROSPERITY CREW LIST AUG.pdf",
+  "JAMAICA PROSPERITY|0909|Crew Consent": "Crew Consent(1).pdf",
+  "JAMAICA PROSPERITY|0909|Crew List": "IMO CRew List 09-Sep-2026.pdf",
+  "JAMAICA PROSPERITY|0916|Crew Consent": "Crew Consent Form individualsigned 1.pdf",
+  "JAMAICA PROSPERITY|0916|Crew List": "Crew List Departure Ras Tanura 14-Sep-2026 1.pdf",
+  "KUWAIT PROSPERITY|0813|Crew Consent": "Kuwait Prosperity Individual crew consent.pdf",
+  "KUWAIT PROSPERITY|0813|Crew List": "Kuwait Prosperity Collective Crew Consent.pdf",
+  "KUWAIT PROSPERITY|0824|Crew Consent": "Kuwait Prosperity Crew Consent 1.pdf",
+  "KUWAIT PROSPERITY|0824|Crew List": "Kuwait Prosperity Crew List.pdf",
+  "KUWAIT PROSPERITY|0904|Crew Consent": "2026-09-02 CREW_CONSENT_FORM kuwait.pdf",
+  "KUWAIT PROSPERITY|0904|Crew List": "Kuwait Prosperity_Crew List.pdf",
+  "KUWAIT PROSPERITY|0913|Crew Consent": "Crew consent_outbound transit_Optimized(1).pdf",
+  "KUWAIT PROSPERITY|0913|Crew List": "Kuwait Prosperity.pdf",
+  "MALAYSIA PROSPERITY|0807|Crew Consent": "CREW CONSENT FORM.pdf",
+  "MALAYSIA PROSPERITY|0807|Crew List": "Crew List - FAL Form 5 07-Aug-2026 24 CREW_.pdf",
+  "MALAYSIA PROSPERITY|0815|Crew Consent": "consent forms20260815_14202344.pdf",
+  "MALAYSIA PROSPERITY|0815|Crew List": "crew list20260815_13480136.pdf",
+  "MONACO PROSPERITY|0816|Crew Consent": "Crew Consent - Monaco Prosperity.pdf",
+  "MONACO PROSPERITY|0816|Crew List": "Crew list - Monaco Prosperity.pdf",
+  "MONACO PROSPERITY|0824|Crew Consent": "Crew consent (4).pdf",
+  "MONACO PROSPERITY|0824|Crew List": "Crew list (1).pdf",
+  "MONACO PROSPERITY|0917|Crew Consent": "Consent Form_Monaco Prosperity_Team D.pdf",
+  "MONACO PROSPERITY|0917|Crew List": "FAL Form 5 - Crew List.pdf",
+  "MONGOLIA PROSPERITY|0824|Crew Consent": "Crew consent.pdf",
+  "MONGOLIA PROSPERITY|0824|Crew List": "Crew list.pdf",
+  "MONGOLIA PROSPERITY|0905|Crew Consent": "mongolia crew consent.pdf",
+  "MONGOLIA PROSPERITY|0905|Crew List": "mongolia Crew List.pdf",
+  "MOZAMBIQUE B|0808|Crew Consent": "Attachment 9 - Crew consent.pdf",
+  "MOZAMBIQUE B|0808|Crew List": "Attachment 8 - Crew list.pdf",
+  "MOZAMBIQUE B|0818|Crew Consent": "Mozambique B - Crew consent.pdf",
+  "MOZAMBIQUE B|0818|Crew List": "Mozambique B - Crew list.pdf",
+  "MOZAMBIQUE B|0914|Crew Consent": "DOC-20260913-WA0009.pdf",
+  "MOZAMBIQUE B|0914|Crew List": "DOC-20260913-WA0008.pdf",
+  "MYANMAR PROSPERITY|0823|Crew Consent": "Crew consent.pdf",
+  "MYANMAR PROSPERITY|0823|Crew List": "TEAM C crew list.pdf",
+  "MYANMAR PROSPERITY|0831|Crew Consent": "MYANMAR PROSPERITY - Crew consent.pdf",
+  "MYANMAR PROSPERITY|0831|Crew List": "MYANMAR PROSPERITY - Crew list.pdf",
+  "MYANMAR PROSPERITY|0907|Crew Consent": "Crew Consent Form (2).pdf",
+  "MYANMAR PROSPERITY|0907|Crew List": "Crew List 06.09.2026.pdf",
+  "MYANMAR PROSPERITY|0917|Crew Consent": "Myanmar Prosperity transit crew consent.pdf",
+  "MYANMAR PROSPERITY|0917|Crew List": "Myanmar Prosperity Transit Crew list.pdf",
+  "PANAMA PROSPERITY|0804|Crew Consent": "Crew Consent Form_ 04-08-2026.pdf",
+  "PANAMA PROSPERITY|0804|Crew List": "Panama Prosperity Crew List.pdf",
+  "PANAMA PROSPERITY|0821|Crew Consent": "Vessel - Panama Prosperity - Crew Consent Form.pdf",
+  "PANAMA PROSPERITY|0821|Crew List": "Crew List 21-08-2026.pdf",
+  "PANAMA PROSPERITY|0909|Crew Consent": "9월9일 PANAMA 선원동의서 INBOUND (2).pdf",
+  "PANAMA PROSPERITY|0909|Crew List": "9월9일 PANAMA 선원리스트 INBOUND (2).pdf",
+  "PANAMA PROSPERITY|0917|Crew Consent": "SOH OUTBOUND - 17.09.2026.pdf",
+  "PANAMA PROSPERITY|0917|Crew List": "04. IMO CREW LIST DEP JUAYMAH.pdf",
+  "PERU PROSPERITY|0809|Crew Consent": "Crew Consent.pdf",
+  "PERU PROSPERITY|0809|Crew List": "CREW LIST Peru Prosperity.pdf",
+  "PERU PROSPERITY|0827|Crew Consent": "Vessel - Peru Prosperity - Crew Consent Form.pdf",
+  "PERU PROSPERITY|0827|Crew List": "Peru Prosperity - IMO Crew List.pdf",
+  "PERU PROSPERITY|0904|Crew Consent": "Peru Prosperity Crew Consent.pdf",
+  "PERU PROSPERITY|0904|Crew List": "Peru Prosperity Crew List.pdf",
+  "PERU PROSPERITY|0914|Crew Consent": "PERU PROSPERITY - Crew Consent.pdf",
+  "PERU PROSPERITY|0914|Crew List": "PERU PROSPERITY - Crew list(1).pdf",
+  "PHILIPPINES PROSPERITY|0805|Crew Consent": "Crew consent form 05AUG2026.pdf",
+  "PHILIPPINES PROSPERITY|0805|Crew List": "Dubai Crew List Format-Departure.pdf",
+  "PORTUGAL PROSPERITY|0824|Crew Consent": "CREW COMSENT FORM_0001.pdf",
+  "PORTUGAL PROSPERITY|0824|Crew List": "Portugal Prosperity- Crew consent.pdf",
+  "PORTUGAL PROSPERITY|0913|Crew Consent": "CONSENT FORM SOH PORTUGAL PROSPERITY.pdf",
+  "PORTUGAL PROSPERITY|0913|Crew List": "DEP CREW LIST.pdf",
+  "SAMOA PROSPERITY|0815|Crew Consent": "Crew Consent.pdf",
+  "SAMOA PROSPERITY|0815|Crew List": "Crew List_Samoa.pdf",
+  "SAMOA PROSPERITY|0829|Crew Consent": "Consent form merged.pdf",
+  "SAMOA PROSPERITY|0829|Crew List": "SAMOA PROSPERITY - CREW LIST.pdf",
+  "SAMOA PROSPERITY|0910|Crew Consent": "Consent form merged.pdf",
+  "SAMOA PROSPERITY|0910|Crew List": "SAMOA PROSPERITY - CREW LIST.pdf",
+  "SAMOA PROSPERITY|0917|Crew Consent": "CREW CONSENT (11).pdf",
+  "SAMOA PROSPERITY|0917|Crew List": "Samoa Prosperity - Crewlist.pdf",
+  "SENEGAL PROSPERITY|0826|Crew Consent": "SENEGAL PROSPERITY - Consent Reoport.pdf",
+  "SENEGAL PROSPERITY|0826|Crew List": "SENEGAL CREW LIST.pdf",
+  "SENEGAL PROSPERITY|0831|Crew Consent": "Crew Consent 23 person 31.08.2026.pdf",
+  "SENEGAL PROSPERITY|0831|Crew List": "Crew List_Senegal Prosperity.pdf",
+  "SINGAPORE PROSPERITY|0812|Crew Consent": "SINGAPORE P.pdf",
+  "SINGAPORE PROSPERITY|0812|Crew List": "Singapore Prosperity Crew List.pdf",
+  "SINGAPORE PROSPERITY|0818|Crew Consent": "Consent crew.pdf",
+  "SINGAPORE PROSPERITY|0818|Crew List": "1. IMO crew list.pdf",
+  "SINGAPORE PROSPERITY|0826|Crew Consent": "SINGAPORE PROSPERITY - CREW_CONSENT_FORM_Individual_IBF_Warlike_HRA_eng-3 - Stamp&Signed.pdf",
+  "SINGAPORE PROSPERITY|0826|Crew List": "SNGAPORE PROSPERITY - IMO Crew List.pdf",
+  "SINGAPORE PROSPERITY|0902|Crew Consent": "CREW_CONSENT_FORM_Individual_IBF_Warlike_HRA_eng_3_Stamp&Signed.pdf",
+  "SINGAPORE PROSPERITY|0902|Crew List": "Singapore Crew List.pdf",
+  "SINGAPORE PROSPERITY|0916|Crew Consent": "Singapore Prosperity - Crew Consent Report for SOH Inbound.pdf",
+  "SINGAPORE PROSPERITY|0916|Crew List": "Crew List_20260915.pdf",
+  "SOUTH AFRICA PROSPERITY|0814|Crew Consent": "Crew Consent Form Individual.pdf",
+  "SOUTH AFRICA PROSPERITY|0814|Crew List": "GOF-01.2b - Crew List.pdf",
+  "SPAIN B|0731|Crew Consent": "SPAIN B 30th July Crew Consent Letter .pdf",
+  "SPAIN B|0731|Crew List": "SPAIN B CREW LIST.pdf",
+  "SPAIN B|0910|Crew Consent": "9월9일 SPAIN B 선원동의서 INBOUND.pdf",
+  "SPAIN B|0910|Crew List": "Spain B Crew List.pdf",
+  "SPAIN B|0917|Crew Consent": "Crew Consent Letter (1).pdf",
+  "SPAIN B|0917|Crew List": "SPAIN B  Crew  List 15 September-signed (1).pdf",
+  "SURINAME PROSPERITY|0803|Crew Consent": "CREW_CONSENT_FORM_Individual_IBF_Warlike_HRA_eng-3.pdf",
+  "SURINAME PROSPERITY|0803|Crew List": "SURINAME PROSPERITY.pdf",
+  "SURINAME PROSPERITY|0817|Crew Consent": "CREW CONSNT 17 AUG 2026.pdf",
+  "SURINAME PROSPERITY|0817|Crew List": "Departure Crew List - FAL Form 5.pdf",
+  "SURINAME PROSPERITY|0827|Crew Consent": "Crew Consent Forms Full Crew 20260827.pdf",
+  "SURINAME PROSPERITY|0827|Crew List": "Crew List_Suriname Prosperity.pdf",
+  "SURINAME PROSPERITY|0904|Crew Consent": "CREW CONSENT FORM-2.pdf",
+  "SURINAME PROSPERITY|0904|Crew List": "Crew List - FAL Form 5 Departure.pdf",
+  "SURINAME PROSPERITY|0914|Crew Consent": "Crew Consent 2026.09.12_8674(1).pdf",
+  "SURINAME PROSPERITY|0914|Crew List": "CrewList 2026.09.12_5298(1).pdf",
+  "SWEDEN PROSPERITY|0818|Crew Consent": "Crew Consent .pdf",
+  "SWEDEN PROSPERITY|0818|Crew List": "Crew List_Sweden Prosperity.pdf",
+  "SWEDEN PROSPERITY|0825|Crew Consent": "SWEDEN PROSPERITY - Crew Consent  1.pdf",
+  "SWEDEN PROSPERITY|0825|Crew List": "SWEDEN PROSPERITY CREW LIST.pdf",
+  "SWEDEN PROSPERITY|0911|Crew Consent": "crew concern forms .pdf",
+  "SWEDEN PROSPERITY|0911|Crew List": "Sweden Prosperity Crew List.pdf",
+  "TANZANIA PROSPERITY|0806|Crew Consent": "CREW_CONSENT_FORM_Individual_IBF_Warlike_HRA 1.pdf",
+  "TANZANIA PROSPERITY|0806|Crew List": "IMO  Crew List - Tanzania Prosperity.pdf",
+  "TANZANIA PROSPERITY|0902|Crew Consent": "CREW_CONSENT_FORM_Individual_IBF_Warlike_HRA 2 - Part 1.pdf",
+  "TANZANIA PROSPERITY|0902|Crew List": "IMO CREW LIST -  TANZANIA PROSPERITY.pdf",
+  "TANZANIA PROSPERITY|0910|Crew Consent": "CREW_CONSENT_FORM_Individual_IBF_Warlike_HRA 1-2(1).pdf",
+  "TANZANIA PROSPERITY|0910|Crew List": "IMO CREW LIST -  22-08-2026(2).pdf",
+  "TUNISIA PROSPERITY|0904|Crew Consent": "Tunisia Prosperity - Crew Consent (before transit).pdf",
+  "TUNISIA PROSPERITY|0904|Crew List": "FAL Form 5 - Crew List.pdf",
+  "TUNISIA PROSPERITY|0912|Crew Consent": "Tunisia Prosperity - Crew Consent for SOH Outbound.pdf",
+  "TUNISIA PROSPERITY|0912|Crew List": "Tunisia Prosperity - Crew list for SOH outbound(1).pdf"
+};
+const SOH_DOC_FILES_GITHUB = {
+  "BRUNEI PROSPERITY|0811|Crew Consent": "Crew consent (1).pdf",
+  "BRUNEI PROSPERITY|0811|Crew List": "CREW LIST _TEAM A.pdf"
+};
+
 // 이 페이지가 어떻게 열렸는지에 따라 두 곳 중 하나로 연결한다:
-// - 로컬 PC에서 file://로 열었을 때: D: 드라이브의 실제 폴더로 직접 연결.
+// - 로컬 PC에서 file://로 열었을 때: D: 드라이브의 실제 폴더/파일로 직접 연결.
 // - GitHub Pages/아티팩트(https://)로 열었을 때: 로컬 드라이브에 접근할 수 없으므로
-//   대신 비공개(private) GitHub 저장소 svms-crew-docs의 같은 구조 폴더로 연결 -
+//   대신 비공개(private) GitHub 저장소 svms-crew-docs의 같은 구조로 연결 -
 //   개인정보(선원 이름/서명 등)가 담긴 문서라 Public 저장소에는 올리지 않고,
 //   접근 권한이 있는 사람만 로그인해서 볼 수 있는 private repo를 따로 씀.
 const SOH_DOCS_LOCAL_BASE_SEGMENTS = ["SINOKOR", "현안폴더 (251020 생성)", "SOH TRANSIT", "CREW CONSENT"];
 const SOH_DOCS_GITHUB_REPO = "Sinokor-Kong/svms-crew-docs";
 function sohDocFolderUrl(vessel, dateStr, kind) {
   const mmdd = dateStr.slice(5, 7) + dateStr.slice(8, 10);
+  const key = `${vessel}|${mmdd}|${kind}`;
   if (location.protocol === "file:") {
-    const segments = [...SOH_DOCS_LOCAL_BASE_SEGMENTS, vessel, mmdd, kind];
-    return "file:///D:/" + segments.map(encodeURIComponent).join("/") + "/";
+    const filename = SOH_DOC_FILES_LOCAL[key];
+    const segments = [...SOH_DOCS_LOCAL_BASE_SEGMENTS, vessel, mmdd, kind, ...(filename ? [filename] : [])];
+    return "file:///D:/" + segments.map(encodeURIComponent).join("/") + (filename ? "" : "/");
   }
-  const segments = [vessel, mmdd, kind];
-  return `https://github.com/${SOH_DOCS_GITHUB_REPO}/tree/main/` + segments.map(encodeURIComponent).join("/");
+  const filename = SOH_DOC_FILES_GITHUB[key];
+  const segments = [vessel, mmdd, kind, ...(filename ? [filename] : [])];
+  const viewMode = filename ? "blob" : "tree";
+  return `https://github.com/${SOH_DOCS_GITHUB_REPO}/${viewMode}/main/` + segments.map(encodeURIComponent).join("/");
 }
 function buildSohTable() {
   const q = (document.getElementById("sohSearchInput").value || "").trim().toUpperCase();
