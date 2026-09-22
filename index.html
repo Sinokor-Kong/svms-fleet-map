@@ -1657,6 +1657,10 @@ const SOH_TRANSIT_LOG = [
   {date:"2026-09-19",vessel:"SAMOA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2006",manager:"ESM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"9/19 0700LT (0300GMT)"},{point:"CP-H",time:"9/19 0829LT (0429GMT)"},{point:"CP-D",time:"9/19 0956LT (0556GMT)"},{point:"CP-S",time:"9/19 1118LT (0718GMT)"},{point:"CP-A",time:"9/19 1230LT (0830GMT)"}]},
   {date:"2026-09-20",vessel:"SWEDEN PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
   {date:"2026-09-20",vessel:"SWEDEN PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2010",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"9/20 0401LT (0001GMT)"},{point:"CP-S",time:"9/20 0540LT (0140GMT)"},{point:"CP-D",time:"9/20 0710LT (0310GMT)"},{point:"CP-H",time:"9/20 0937LT (0537GMT)"},{point:"CP-Z",time:"9/20 1200LT (0800GMT)"}]},
+  {date:"2026-09-21",vessel:"THAILAND PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"9/21 0700LT (0300GMT)"},{point:"CP-H",time:"9/21 0850LT (0450GMT)"},{point:"CP-D",time:"9/21 1040LT (0640GMT)"},{point:"CP-S",time:"9/21 1150LT (0750GMT)"},{point:"CP-A",time:"9/21 1320LT (0920GMT)"}]},
+  {date:"2026-09-21",vessel:"ANGOLA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2021",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"9/21 1300LT (0900GMT)"},{point:"CP-H",time:"9/21 1438LT (1038GMT)"},{point:"CP-D",time:"9/21 1629LT (1229GMT)"},{point:"CP-S",time:"9/21 1746LT (1346GMT)"},{point:"CP-A",time:"9/21 1855LT (1455GMT)"}]},
+  {date:"2026-09-21",vessel:"MOZAMBIQUE B",direction:"EASTBOUND(출항)",source:"excel",built:"2008",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"9/21 0700LT (0300GMT)"},{point:"CP-S",time:"9/21 0845LT (0445GMT)"},{point:"CP-D",time:"9/21 1010LT (0610GMT)"},{point:"CP-H",time:"9/21 1215LT (0815GMT)"},{point:"CP-Z",time:"9/21 1520LT (1120GMT)"}]},
+  {date:"2026-09-22",vessel:"INDONESIA PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2005",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"9/22 0401LT (0001GMT)"},{point:"CP-H",time:"9/22 0930LT (0430GMT)"},{point:"CP-D",time:"9/22 1026LT (0526GMT)"},{point:"CP-S",time:"9/22 1142LT (0642GMT)"},{point:"CP-A",time:"9/22 1320LT (0820GMT)"}]},
 ];
 
 // 예정 INBOUND 선박 리스트 — "호르무즈 통항 PLAN" 엑셀의 "호르무즈 IN" 시트에서
@@ -1666,13 +1670,13 @@ const SOH_TRANSIT_LOG = [
 // 각 항목: {name, built, manager, charterer, location} - 엑셀의
 // BUILT/MANAGER/용선주/현위치 열 그대로 (Cargo Status는 운항레포트가 더 최신이라
 // VESSELS의 ballast를 이름으로 매칭해서 씀 - buildSohPendingLists() 참고).
-const SOH_PENDING_INBOUND = [{name:"SENEGAL PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"SOH"}, {name:"FINLAND PROSPERITY",built:2009,manager:"SYNERGY",charterer:"TOTAL",location:"FUJAIRAH"}, {name:"INDONESIA PROSPERITY",built:2005,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"ALGERIA PROSPERITY",built:2013,manager:"ESM",charterer:"TOTAL",location:"FUJAIRAH"}, {name:"TANZANIA PROSPERITY",built:2010,manager:"SYNERGY",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"TUNISIA PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"BULGARIA PROSPERITY",built:2008,manager:"FLEET",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"PORTUGAL PROSPERITY",built:2011,manager:"SYNERGY",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"KUWAIT PROSPERITY",built:2016,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"SURINAME PROSPERITY",built:2009,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"FIJI PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"JAMAICA PROSPERITY",built:2012,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"THAILAND PROSPERITY",built:2011,manager:"FLEET",charterer:"BAHRI",location:"KHOR FAKKAN"}, {name:"CHILE PROSPERITY",built:2019,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"MYANMAR PROSPERITY",built:2011,manager:"FLEET",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"PANAMA PROSPERITY",built:2013,manager:"SYNERGY",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"SPAIN B",built:2016,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"GUYANA PROSPERITY",built:2016,manager:"CSM",charterer:"STILL OPEN",location:"TO FUJAIRAH"}, {name:"SRI LANKA PROSPERITY",built:2011,manager:"CSM",charterer:"STILL OPEN",location:"TO FUJAIRAH"}, {name:"VIETNAM PROSPERITY",built:2016,manager:"CSM",charterer:"STILL OPEN",location:"TO FUJAIRAH"}, {name:"SWEDEN PROSPERITY",built:2010,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"ANGOLA PROSPERITY",built:2021,manager:"CSM",charterer:"STILL OPEN",location:"FUJAIRAH"}];
+const SOH_PENDING_INBOUND = [{name:"SENEGAL PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"SOH"}, {name:"FINLAND PROSPERITY",built:2009,manager:"SYNERGY",charterer:"TOTAL",location:"FUJAIRAH"}, {name:"ALGERIA PROSPERITY",built:2013,manager:"ESM",charterer:"TOTAL",location:"FUJAIRAH"}, {name:"TANZANIA PROSPERITY",built:2010,manager:"SYNERGY",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"TUNISIA PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"BULGARIA PROSPERITY",built:2008,manager:"FLEET",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"PORTUGAL PROSPERITY",built:2011,manager:"SYNERGY",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"KUWAIT PROSPERITY",built:2016,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"SURINAME PROSPERITY",built:2009,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"FIJI PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"JAMAICA PROSPERITY",built:2012,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"CHILE PROSPERITY",built:2019,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"MYANMAR PROSPERITY",built:2011,manager:"FLEET",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"PANAMA PROSPERITY",built:2013,manager:"SYNERGY",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"SPAIN B",built:2016,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"GUYANA PROSPERITY",built:2016,manager:"CSM",charterer:"STILL OPEN",location:"TO FUJAIRAH"}, {name:"SRI LANKA PROSPERITY",built:2011,manager:"CSM",charterer:"STILL OPEN",location:"TO FUJAIRAH"}, {name:"VIETNAM PROSPERITY",built:2016,manager:"CSM",charterer:"STILL OPEN",location:"TO FUJAIRAH"}, {name:"SWEDEN PROSPERITY",built:2010,manager:"CSM",charterer:"BAHRI",location:"TO INDIA"}, {name:"MOZAMBIQUE B",built:2008,manager:"FLEET",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"GERMANY B",built:2010,manager:"FLEET",charterer:"STILL OPEN",location:"TO FUJAIRAH"}, {name:"BRUNEI PROSPERITY",built:2010,manager:"FLEET",charterer:"STILL OPEN",location:"TO FUJAIRAH"}, {name:"PHILIPPINES PROSPERITY",built:2010,manager:"FLEET",charterer:"STILL OPEN",location:"TO FUJAIRAH"}, {name:"BARBADOS PROSPERITY",built:2010,manager:"FLEET",charterer:"STILL OPEN",location:"TO FUJAIRAH"}, {name:"DOMINICA PROSPERITY",built:2011,manager:"ANGLO E",charterer:"STILL OPEN",location:"TO FUJAIRAH"}];
 
 // "호르무즈 OUT" 시트에서 뽑은 용선주/현위치 참고정보 - 예정 OUTBOUND 명단 자체의
 // 멤버십은 (위 INBOUND와 달리) 이 시트가 아니라 위치로 그대로 계산하고, 여기선
 // 그 명단에 용선주/현위치만 선박명으로 매칭해 보충한다. import_soh_plan_excel.py가
 // 매번 통째로 갈아끼움. 각 항목: {name, charterer, location}.
-const SOH_OUTBOUND_PLAN_INFO = [{name:"CROATIA PROSPERITY",charterer:"BAHRI",location:"DUBAI"}, {name:"EGYPT PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"PERU PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"MOZAMBIQUE B",charterer:"BAHRI",location:"RAS TANURA"}, {name:"SINGAPORE PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"MONACO PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"GHANA PROSPERITY",charterer:"BAHRI",location:"JUAYMAH "}, {name:"BAHAMAS PROSPERITY",charterer:"TOTAL",location:"BASRAH"}, {name:"MALAYSIA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"SAMOA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}];
+const SOH_OUTBOUND_PLAN_INFO = [{name:"CROATIA PROSPERITY",charterer:"BAHRI",location:"DUBAI"}, {name:"EGYPT PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"PERU PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"MOZAMBIQUE B",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"SINGAPORE PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"MONACO PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"GHANA PROSPERITY",charterer:"BAHRI",location:"JUAYMAH "}, {name:"BAHAMAS PROSPERITY",charterer:"TOTAL",location:"BASRAH"}, {name:"MALAYSIA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"SAMOA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"THAILAND PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"ANGOLA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"INDONESIA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}];
 
 // 날짜별 선단 Laden/Ballast 척수 스냅샷 — auto_update.py가 매 실행마다
 // fleet_status_log.csv 전체 내용으로 이 배열을 재생성함 (하루 1건, 그날 마지막 실행값)
@@ -4004,6 +4008,8 @@ const SOH_DOC_FILES_LOCAL = {
   "ANGOLA PROSPERITY|0813|Crew List": "ANGOLA PROSPERITY Crew List.pdf",
   "ANGOLA PROSPERITY|0824|Crew Consent": "Signed Individual Crew Consent Form dd 24-Aug-2026.pdf",
   "ANGOLA PROSPERITY|0824|Crew List": "Angola Prosperity_Crew List.pdf",
+  "ANGOLA PROSPERITY|0921|Crew Consent": "Personal Crew Consent Form - ANGOLA PROSPERITY(1).pdf",
+  "ANGOLA PROSPERITY|0921|Crew List": "Dparture Crew List Fujairah 21-Sep-2026 ANGOLA PROSPERITY(1).pdf",
   "BAHAMAS PROSPERITY|0810|Crew Consent": "ALL crew constant form 10-08-2026.pdf",
   "BAHAMAS PROSPERITY|0810|Crew List": "Bahamas Prosperity - Crew list (1).pdf",
   "BAHAMAS PROSPERITY|0818|Crew Consent": "Bahamas Prosperity - Crew consent.pdf",
@@ -4060,6 +4066,8 @@ const SOH_DOC_FILES_LOCAL = {
   "INDONESIA PROSPERITY|0902|Crew List": "Indonesia Crew List.pdf",
   "INDONESIA PROSPERITY|0909|Crew Consent": "CREW CONSENT FORM 07.09.2026.pdf",
   "INDONESIA PROSPERITY|0909|Crew List": "Crew List_Indonesia Prosperity.pdf",
+  "INDONESIA PROSPERITY|0922|Crew Consent": "Crew consent form 18.09.2026.pdf",
+  "INDONESIA PROSPERITY|0922|Crew List": "Crew List Departure Indonesia.pdf",
   "JAMAICA PROSPERITY|0728|Crew Consent": "CREW CONSENT FORMS_JAMAICA PROSPERITY 28.07.2026.pdf",
   "JAMAICA PROSPERITY|0728|Crew List": "IMMIGRATION CREW LIST - JAMAICA PROSPERITY - Departure.pdf",
   "JAMAICA PROSPERITY|0810|Crew Consent": "CREW CONCENT FORM 07-AUG-2026.pdf",
@@ -4098,6 +4106,8 @@ const SOH_DOC_FILES_LOCAL = {
   "MOZAMBIQUE B|0818|Crew List": "Mozambique B - Crew list.pdf",
   "MOZAMBIQUE B|0914|Crew Consent": "DOC-20260913-WA0009.pdf",
   "MOZAMBIQUE B|0914|Crew List": "DOC-20260913-WA0008.pdf",
+  "MOZAMBIQUE B|0921|Crew Consent": "Mozambique B - Crew list (1).pdf",
+  "MOZAMBIQUE B|0921|Crew List": "Mozambique B - Crew list (transit team).pdf",
   "MYANMAR PROSPERITY|0823|Crew Consent": "Crew consent.pdf",
   "MYANMAR PROSPERITY|0823|Crew List": "TEAM C crew list.pdf",
   "MYANMAR PROSPERITY|0831|Crew Consent": "MYANMAR PROSPERITY - Crew consent.pdf",
@@ -4182,6 +4192,8 @@ const SOH_DOC_FILES_LOCAL = {
   "TANZANIA PROSPERITY|0902|Crew List": "IMO CREW LIST -  TANZANIA PROSPERITY.pdf",
   "TANZANIA PROSPERITY|0910|Crew Consent": "CREW_CONSENT_FORM_Individual_IBF_Warlike_HRA 1-2(1).pdf",
   "TANZANIA PROSPERITY|0910|Crew List": "IMO CREW LIST -  22-08-2026(2).pdf",
+  "THAILAND PROSPERITY|0921|Crew Consent": "Thailand Prosperity - Crew consent.pdf",
+  "THAILAND PROSPERITY|0921|Crew List": "Thailand Prosperity - Crew list.pdf",
   "TUNISIA PROSPERITY|0904|Crew Consent": "Tunisia Prosperity - Crew Consent (before transit).pdf",
   "TUNISIA PROSPERITY|0904|Crew List": "FAL Form 5 - Crew List.pdf",
   "TUNISIA PROSPERITY|0912|Crew Consent": "Tunisia Prosperity - Crew Consent for SOH Outbound.pdf",
@@ -4200,6 +4212,8 @@ const SOH_DOC_FILES_GITHUB = {
   "ANGOLA PROSPERITY|0813|Crew List": "ANGOLA PROSPERITY Crew List.pdf",
   "ANGOLA PROSPERITY|0824|Crew Consent": "Signed Individual Crew Consent Form dd 24-Aug-2026.pdf",
   "ANGOLA PROSPERITY|0824|Crew List": "Angola Prosperity_Crew List.pdf",
+  "ANGOLA PROSPERITY|0921|Crew Consent": "Personal Crew Consent Form - ANGOLA PROSPERITY(1).pdf",
+  "ANGOLA PROSPERITY|0921|Crew List": "Dparture Crew List Fujairah 21-Sep-2026 ANGOLA PROSPERITY(1).pdf",
   "BAHAMAS PROSPERITY|0810|Crew Consent": "ALL crew constant form 10-08-2026.pdf",
   "BAHAMAS PROSPERITY|0810|Crew List": "Bahamas Prosperity - Crew list (1).pdf",
   "BAHAMAS PROSPERITY|0818|Crew Consent": "Bahamas Prosperity - Crew consent.pdf",
@@ -4256,6 +4270,8 @@ const SOH_DOC_FILES_GITHUB = {
   "INDONESIA PROSPERITY|0902|Crew List": "Indonesia Crew List.pdf",
   "INDONESIA PROSPERITY|0909|Crew Consent": "CREW CONSENT FORM 07.09.2026.pdf",
   "INDONESIA PROSPERITY|0909|Crew List": "Crew List_Indonesia Prosperity.pdf",
+  "INDONESIA PROSPERITY|0922|Crew Consent": "Crew consent form 18.09.2026.pdf",
+  "INDONESIA PROSPERITY|0922|Crew List": "Crew List Departure Indonesia.pdf",
   "JAMAICA PROSPERITY|0728|Crew Consent": "CREW CONSENT FORMS_JAMAICA PROSPERITY 28.07.2026.pdf",
   "JAMAICA PROSPERITY|0728|Crew List": "IMMIGRATION CREW LIST - JAMAICA PROSPERITY - Departure.pdf",
   "JAMAICA PROSPERITY|0810|Crew Consent": "CREW CONCENT FORM 07-AUG-2026.pdf",
@@ -4294,6 +4310,8 @@ const SOH_DOC_FILES_GITHUB = {
   "MOZAMBIQUE B|0818|Crew List": "Mozambique B - Crew list.pdf",
   "MOZAMBIQUE B|0914|Crew Consent": "DOC-20260913-WA0009.pdf",
   "MOZAMBIQUE B|0914|Crew List": "DOC-20260913-WA0008.pdf",
+  "MOZAMBIQUE B|0921|Crew Consent": "Mozambique B - Crew list (1).pdf",
+  "MOZAMBIQUE B|0921|Crew List": "Mozambique B - Crew list (transit team).pdf",
   "MYANMAR PROSPERITY|0823|Crew Consent": "Crew consent.pdf",
   "MYANMAR PROSPERITY|0823|Crew List": "TEAM C crew list.pdf",
   "MYANMAR PROSPERITY|0831|Crew Consent": "MYANMAR PROSPERITY - Crew consent.pdf",
@@ -4378,6 +4396,8 @@ const SOH_DOC_FILES_GITHUB = {
   "TANZANIA PROSPERITY|0902|Crew List": "IMO CREW LIST -  TANZANIA PROSPERITY.pdf",
   "TANZANIA PROSPERITY|0910|Crew Consent": "CREW_CONSENT_FORM_Individual_IBF_Warlike_HRA 1-2(1).pdf",
   "TANZANIA PROSPERITY|0910|Crew List": "IMO CREW LIST -  22-08-2026(2).pdf",
+  "THAILAND PROSPERITY|0921|Crew Consent": "Thailand Prosperity - Crew consent.pdf",
+  "THAILAND PROSPERITY|0921|Crew List": "Thailand Prosperity - Crew list.pdf",
   "TUNISIA PROSPERITY|0904|Crew Consent": "Tunisia Prosperity - Crew Consent (before transit).pdf",
   "TUNISIA PROSPERITY|0904|Crew List": "FAL Form 5 - Crew List.pdf",
   "TUNISIA PROSPERITY|0912|Crew Consent": "Tunisia Prosperity - Crew Consent for SOH Outbound.pdf",
