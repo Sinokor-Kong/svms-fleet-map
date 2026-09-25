@@ -1312,7 +1312,7 @@ document.addEventListener("gesturestart", (e) => e.preventDefault());
 // 관리사 약어 매핑 (선박 제원 검색 아티팩트와 동일한 기준)
 // auto_update.py가 매 실행 성공 시(git 커밋 직전) 이 값을 갱신함 — 아티팩트만 봐도
 // 데이터가 언제 마지막으로 자동 갱신됐는지 바로 식별 가능하도록 부제목에 표시
-const LAST_UPDATED = "2026-09-25 09:57";
+const LAST_UPDATED = "2026-09-25 10:00";
 
 const SM_ABBR = {
   'FLEET': 'FML', 'COLUMBIA': 'CSM', '이그제큐티브 쉽 매니지먼트': 'ESM', 'SYNERGY': 'SYNERGY',
@@ -1625,6 +1625,7 @@ const SOH_TRANSIT_LOG = [
   {date:"2026-09-11",vessel:"SAMOA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
   {date:"2026-09-11",vessel:"EGYPT PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2011",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"9/11 0700LT (0300GMT)"},{point:"CP-H",time:"9/11 0856LT (0456GMT)"},{point:"CP-D",time:"9/11 1040LT (0640GMT)"},{point:"CP-S",time:"9/11 1150LT (0750GMT)"},{point:"CP-A",time:"9/11 1320LT (0920GMT)"}]},
   {date:"2026-09-11",vessel:"SWEDEN PROSPERITY",direction:"WESTBOUND(입항)",source:"excel",built:"2010",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"9/11 1300LT (0900GMT)"},{point:"CP-H",time:"9/11 1440LT (1040GMT)"},{point:"CP-D",time:"9/11 1640LT (1240GMT)"},{point:"CP-S",time:"9/11 1807LT (1407GMT)"},{point:"CP-A",time:"9/11 1940LT (1540GMT)"}]},
+  {date:"2026-09-11",vessel:"SPAIN B",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
   {date:"2026-09-12",vessel:"BULGARIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
   {date:"2026-09-12",vessel:"SWEDEN PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
   {date:"2026-09-12",vessel:"TUNISIA PROSPERITY",direction:"EASTBOUND(출항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
@@ -1684,26 +1685,26 @@ const SOH_OUTBOUND_PLAN_INFO = [{name:"CROATIA PROSPERITY",charterer:"BAHRI",loc
 // 날짜별 선단 Laden/Ballast 척수 스냅샷 — auto_update.py가 매 실행마다
 // fleet_status_log.csv 전체 내용으로 이 배열을 재생성함 (하루 1건, 그날 마지막 실행값)
 const FLEET_STATUS_LOG = [
-  {date:"2026-09-06",laden:76,ballast:72,noData:15},
-  {date:"2026-09-07",laden:74,ballast:74,noData:15},
-  {date:"2026-09-08",laden:72,ballast:76,noData:15},
-  {date:"2026-09-09",laden:67,ballast:81,noData:15},
-  {date:"2026-09-10",laden:71,ballast:77,noData:15},
-  {date:"2026-09-11",laden:69,ballast:79,noData:15},
-  {date:"2026-09-12",laden:75,ballast:73,noData:15},
-  {date:"2026-09-13",laden:75,ballast:73,noData:15},
-  {date:"2026-09-14",laden:77,ballast:71,noData:15},
-  {date:"2026-09-15",laden:74,ballast:74,noData:15},
-  {date:"2026-09-16",laden:72,ballast:76,noData:15},
-  {date:"2026-09-17",laden:72,ballast:76,noData:15},
-  {date:"2026-09-18",laden:73,ballast:75,noData:15},
-  {date:"2026-09-19",laden:74,ballast:74,noData:15},
-  {date:"2026-09-20",laden:75,ballast:73,noData:15},
-  {date:"2026-09-21",laden:77,ballast:71,noData:15},
-  {date:"2026-09-22",laden:79,ballast:69,noData:15},
-  {date:"2026-09-23",laden:82,ballast:66,noData:15},
-  {date:"2026-09-24",laden:79,ballast:69,noData:15},
-  {date:"2026-09-25",laden:79,ballast:69,noData:15},
+  {date:"2026-09-06",laden:38,ballast:41,noData:84},
+  {date:"2026-09-07",laden:40,ballast:39,noData:84},
+  {date:"2026-09-08",laden:38,ballast:41,noData:84},
+  {date:"2026-09-09",laden:33,ballast:46,noData:84},
+  {date:"2026-09-10",laden:37,ballast:42,noData:84},
+  {date:"2026-09-11",laden:37,ballast:42,noData:84},
+  {date:"2026-09-12",laden:37,ballast:42,noData:84},
+  {date:"2026-09-13",laden:39,ballast:40,noData:84},
+  {date:"2026-09-14",laden:40,ballast:39,noData:84},
+  {date:"2026-09-15",laden:38,ballast:41,noData:84},
+  {date:"2026-09-16",laden:36,ballast:43,noData:84},
+  {date:"2026-09-17",laden:34,ballast:45,noData:84},
+  {date:"2026-09-18",laden:34,ballast:45,noData:84},
+  {date:"2026-09-19",laden:35,ballast:44,noData:84},
+  {date:"2026-09-20",laden:35,ballast:44,noData:84},
+  {date:"2026-09-21",laden:34,ballast:45,noData:84},
+  {date:"2026-09-22",laden:36,ballast:43,noData:84},
+  {date:"2026-09-23",laden:35,ballast:44,noData:84},
+  {date:"2026-09-24",laden:34,ballast:45,noData:84},
+  {date:"2026-09-25",laden:34,ballast:45,noData:84},
 ];
 
 // 주요 항구 (배 데이터가 아님 — 화면에 고정된 지리적 기준점, 지도 위 토글로 표시/숨김 가능)
