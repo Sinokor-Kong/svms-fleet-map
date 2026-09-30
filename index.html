@@ -1195,7 +1195,7 @@
           <div class="pt-search-row">
             <div class="pt-search-box">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-              <input id="ptSearchInput" type="text" placeholder="선명, 코드, IMO No, 선주, 조선소로 검색…" autocomplete="off" />
+              <input id="ptSearchInput" type="text" placeholder="선명, 코드, IMO No, 선주, 조선소, Main Engine Maker/Type으로 검색…" autocomplete="off" />
             </div>
             <button class="pt-reset-btn" id="ptResetBtn">필터 초기화</button>
           </div>
@@ -3724,7 +3724,7 @@ function ptPopulateSelect(selectEl, allLabel, list, counts, onChange, labelFn){
 
 function ptMatchesQuery(v, q){
   if (!q) return true;
-  const hay = [v.nameEng, v.nameKor, v.code, v.imoNo, v.owner, v.spcOwner, v.shipyard, v.callsign]
+  const hay = [v.nameEng, v.nameKor, v.code, v.imoNo, v.owner, v.spcOwner, v.shipyard, v.callsign, v.engineMaker, v.engineType]
     .filter(Boolean).join(' ').toLowerCase();
   return hay.includes(q);
 }
