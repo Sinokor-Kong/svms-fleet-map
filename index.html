@@ -1130,24 +1130,16 @@
               <div class="goto-coord-row">
                 <label>위도
                   <div class="goto-coord-field">
-                    <input type="number" id="gotoLatInput" step="any" min="0" max="90" placeholder="예: 25.2048">
-                    <select id="gotoLatDirSelect" aria-label="북/남">
-                      <option value="N">N</option>
-                      <option value="S">S</option>
-                    </select>
+                    <input type="text" id="gotoLatInput" placeholder="예: 18 14.48 N">
                   </div>
                 </label>
                 <label>경도
                   <div class="goto-coord-field">
-                    <input type="number" id="gotoLonInput" step="any" min="0" max="180" placeholder="예: 55.2708">
-                    <select id="gotoLonDirSelect" aria-label="동/서">
-                      <option value="E">E</option>
-                      <option value="W">W</option>
-                    </select>
+                    <input type="text" id="gotoLonInput" placeholder="예: 94-26.53 W">
                   </div>
                 </label>
               </div>
-              <p class="goto-coord-hint" id="gotoCoordHint">십진수 좌표를 입력하세요</p>
+              <p class="goto-coord-hint" id="gotoCoordHint">도 분.분 형식으로 입력하세요 (예: 18 14.48 N / 94-26.53 W)</p>
               <div class="goto-coord-actions">
                 <button type="button" id="gotoCoordGoBtn">이동</button>
                 <button type="button" id="gotoCoordClearBtn">지우기</button>
@@ -3452,8 +3444,6 @@ function buildMap() {
   const gotoCoordHint = document.getElementById("gotoCoordHint");
   const gotoLatInput = document.getElementById("gotoLatInput");
   const gotoLonInput = document.getElementById("gotoLonInput");
-  const gotoLatDirSelect = document.getElementById("gotoLatDirSelect");
-  const gotoLonDirSelect = document.getElementById("gotoLonDirSelect");
   function setGotoPanelOpen(open) {
     gotoCoordPanel.hidden = !open;
     gotoCoordBtn.setAttribute("aria-pressed", String(open));
@@ -3464,18 +3454,31 @@ function buildMap() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !gotoCoordPanel.hidden) setGotoPanelOpen(false);
   });
+  const GOTO_COORD_HINT = "도 분.분 형식으로 입력하세요 (예: 18 14.48 N / 94-26.53 W)";
+  // 선박 GPS 표시 형식(도 분.분, 도-분 사이는 공백/하이픈 둘 다 허용) 그대로 붙여넣을 수 있게
+  // 파싱한다 - 십진수 좌표는 더 이상 입력 형식으로 받지 않는다(2026-09-30 요청).
+  function parseDegMin(str, posDir, negDir, maxDeg) {
+    const m = String(str).trim().match(/^(\d{1,3})[\s-]+(\d{1,2}(?:\.\d+)?)\s*([A-Za-z])$/);
+    if (!m) return null;
+    const deg = parseInt(m[1], 10);
+    const min = parseFloat(m[2]);
+    const dir = m[3].toUpperCase();
+    if (dir !== posDir && dir !== negDir) return null;
+    if (deg > maxDeg || min < 0 || min >= 60) return null;
+    const abs = deg + min / 60;
+    if (abs > maxDeg) return null;
+    return dir === negDir ? -abs : abs;
+  }
   function submitGotoCoord() {
-    const latAbs = parseFloat(gotoLatInput.value);
-    const lonAbs = parseFloat(gotoLonInput.value);
-    if (!Number.isFinite(latAbs) || !Number.isFinite(lonAbs) || latAbs < 0 || latAbs > 90 || lonAbs < 0 || lonAbs > 180) {
+    const lat = parseDegMin(gotoLatInput.value, "N", "S", 90);
+    const lon = parseDegMin(gotoLonInput.value, "E", "W", 180);
+    if (lat === null || lon === null) {
       gotoCoordPanel.classList.add("goto-coord-error");
-      gotoCoordHint.textContent = "위도(0~90), 경도(0~180) 범위의 숫자를 입력하세요";
+      gotoCoordHint.textContent = "형식을 확인하세요 (예: 18 14.48 N / 94-26.53 W)";
       return;
     }
     gotoCoordPanel.classList.remove("goto-coord-error");
-    gotoCoordHint.textContent = "십진수 좌표를 입력하세요";
-    const lat = gotoLatDirSelect.value === "S" ? -latAbs : latAbs;
-    const lon = gotoLonDirSelect.value === "W" ? -lonAbs : lonAbs;
+    gotoCoordHint.textContent = GOTO_COORD_HINT;
     goToCoord(lat, lon);
   }
   document.getElementById("gotoCoordGoBtn").addEventListener("click", submitGotoCoord);
@@ -3483,7 +3486,7 @@ function buildMap() {
     clearCoordPin();
     gotoLatInput.value = ""; gotoLonInput.value = "";
     gotoCoordPanel.classList.remove("goto-coord-error");
-    gotoCoordHint.textContent = "십진수 좌표를 입력하세요";
+    gotoCoordHint.textContent = GOTO_COORD_HINT;
   });
   [gotoLatInput, gotoLonInput].forEach(inp => inp.addEventListener("keydown", (e) => {
     if (e.key === "Enter") submitGotoCoord();
