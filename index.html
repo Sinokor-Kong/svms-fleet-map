@@ -1700,11 +1700,12 @@ const SOH_TRANSIT_LOG = [
 // VESSELS의 ballast를 이름으로 매칭해서 씀 - buildSohPendingLists() 참고).
 const SOH_PENDING_INBOUND = [{name:"SENEGAL PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"UAE"}, {name:"FINLAND PROSPERITY",built:2009,manager:"SYNERGY",charterer:"TOTAL",location:"FUJAIRAH"}, {name:"ALGERIA PROSPERITY",built:2013,manager:"ESM",charterer:"STILL OPEN",location:"FUJAIRAH"}, {name:"BULGARIA PROSPERITY",built:2008,manager:"FLEET",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"PANAMA PROSPERITY",built:2013,manager:"SYNERGY",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"SWEDEN PROSPERITY",built:2010,manager:"CSM",charterer:"BAHRI",location:"TO INDIA"}, {name:"MOZAMBIQUE B",built:2008,manager:"FLEET",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"PERU PROSPERITY",built:2009,manager:"SYNERGY",charterer:"BAHRI",location:"SOHAR"}, {name:"SINGAPORE PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"EGYPT PROSPERITY",built:2011,manager:"FLEET",charterer:"BAHRI",location:"SOHAR"}, {name:"SAMOA PROSPERITY",built:2006,manager:"ESM",charterer:"BAHRI",location:"TO INDIA"}, {name:"GHANA PROSPERITY",built:2016,manager:"CSM",charterer:"BAHRI",location:"SOHAR"}, {name:"MALAYSIA PROSPERITY",built:2011,manager:"SYNERGY",charterer:"BAHRI",location:"TO INDIA"}, {name:"MONACO PROSPERITY",built:2011,manager:"FLEET",charterer:"BAHRI",location:"TO INDIA"}, {name:"INDONESIA PROSPERITY",built:2005,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"ANGOLA PROSPERITY",built:2021,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"TANZANIA PROSPERITY",built:2010,manager:"SYNERGY",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"KUWAIT PROSPERITY",built:2016,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"CROATIA PROSPERITY",built:2017,manager:"FLEET",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"FIJI PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"GUYANA PROSPERITY",built:2016,manager:"CSM",charterer:"BAHRI",location:"FUJAIRAH"}];
 
-// "호르무즈 OUT" 시트에서 뽑은 용선주/현위치 참고정보 - 예정 OUTBOUND 명단 자체의
-// 멤버십은 (위 INBOUND와 달리) 이 시트가 아니라 위치로 그대로 계산하고, 여기선
-// 그 명단에 용선주/현위치만 선박명으로 매칭해 보충한다. import_soh_plan_excel.py가
-// 매번 통째로 갈아끼움. 각 항목: {name, charterer, location}.
-const SOH_OUTBOUND_PLAN_INFO = [{name:"MOZAMBIQUE B",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"BAHAMAS PROSPERITY",charterer:"TOTAL",location:"BASRAH"}, {name:"THAILAND PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"BRUNEI PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"GERMANY B",charterer:"STILL OPEN",location:"DUBAI"}, {name:"PHILIPPINES PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"TUNISIA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"BARBADOS PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"SURINAME PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"SPAIN B",charterer:"BAHRI",location:"RAS TANURA"}, {name:"VIETNAM PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"CHILE PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"PORTUGAL PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"MYANMAR PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"SRI LANKA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"JAMAICA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"DOMINICA PROSPERITY",charterer:"BAHRI",location:"RAS TANURA"}];
+// "호르무즈 OUT" 시트에서 뽑은 예정 OUTBOUND 선박(이름/BLT/MANAGER/용선주/현위치)
+// 리스트 - SOH_PENDING_INBOUND와 대칭 구조(이력 아님, 매번 현재 시점 스냅샷).
+// import_soh_plan_excel.py가 매번 통째로 갈아끼움. 명단 멤버십 자체도 이제 이
+// 시트 기준(과거엔 실시간 위치로 추정했으나, 위경도 오기재로 오탐이 잦고 엑셀에
+// 이미 수기로 관리되는 동일한 목적의 명단이 있어 2026-10-02 엑셀 기준으로 통일).
+const SOH_PENDING_OUTBOUND = [{name:"MOZAMBIQUE B",built:2008,manager:"FLEET",charterer:"BAHRI",location:"FUJAIRAH"}, {name:"BAHAMAS PROSPERITY",built:2007,manager:"FLEET",charterer:"TOTAL",location:"BASRAH"}, {name:"THAILAND PROSPERITY",built:2011,manager:"FLEET",charterer:"BAHRI",location:"RAS TANURA"}, {name:"BRUNEI PROSPERITY",built:2010,manager:"FLEET",charterer:"BAHRI",location:"RAS TANURA"}, {name:"GERMANY B",built:2010,manager:"FLEET",charterer:"STILL OPEN",location:"DUBAI"}, {name:"PHILIPPINES PROSPERITY",built:2010,manager:"FLEET",charterer:"BAHRI",location:"RAS TANURA"}, {name:"TUNISIA PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"RAS TANURA"}, {name:"BARBADOS PROSPERITY",built:2010,manager:"FLEET",charterer:"BAHRI",location:"RAS TANURA"}, {name:"SURINAME PROSPERITY",built:2009,manager:"CSM",charterer:"BAHRI",location:"RAS TANURA"}, {name:"SPAIN B",built:2016,manager:"CSM",charterer:"BAHRI",location:"RAS TANURA"}, {name:"VIETNAM PROSPERITY",built:2016,manager:"CSM",charterer:"BAHRI",location:"RAS TANURA"}, {name:"CHILE PROSPERITY",built:2019,manager:"CSM",charterer:"BAHRI",location:"RAS TANURA"}, {name:"PORTUGAL PROSPERITY",built:2011,manager:"SYNERGY",charterer:"BAHRI",location:"RAS TANURA"}, {name:"MYANMAR PROSPERITY",built:2011,manager:"FLEET",charterer:"BAHRI",location:"RAS TANURA"}, {name:"SRI LANKA PROSPERITY",built:2011,manager:"CSM",charterer:"BAHRI",location:"RAS TANURA"}, {name:"JAMAICA PROSPERITY",built:2012,manager:"CSM",charterer:"BAHRI",location:"RAS TANURA"}, {name:"DOMINICA PROSPERITY",built:2011,manager:"ANGLO E",charterer:"BAHRI",location:"RAS TANURA"}];
 
 // 날짜별 선단 Laden/Ballast 척수 스냅샷 — auto_update.py가 매 실행마다
 // fleet_status_log.csv 전체 내용으로 이 배열을 재생성함 (하루 1건, 그날 마지막 실행값)
@@ -3881,39 +3882,6 @@ function buildNoonTable() {
   });
 }
 
-// auto_update.py의 hormuz_side()와 동일한 상수/판정 - 확정 통항 기록이 아예 없는
-// 선박에 한해서만 실시간 위치의 보조 판정으로 쓴다(아래 vesselIsInGulf 참고).
-const SOH_LAT_MIN = 20.0, SOH_LAT_MAX = 32.0;
-const SOH_GULF_LON_MIN = 47.0, SOH_GULF_LON_MAX = 56.2;
-function isInGulf(lat, lon) {
-  if (lat == null || lon == null) return false;
-  return lat >= SOH_LAT_MIN && lat <= SOH_LAT_MAX && lon >= SOH_GULF_LON_MIN && lon < SOH_GULF_LON_MAX;
-}
-
-// NOON REPORT 위치는 SVMS 반영이 하루 늦어, 어제 이미 OUTBOUND 통항 완료된 선박도
-// 위치만 보면 여전히 AG 내부로 잡히는 오류가 있었다(확인 사례: SINGAPORE PROSPERITY -
-// 확정 OUTBOUND 기록이 있는데도 위치 기준으로 예정 OUTBOUND에 중복 표시됨). 그래서
-// "확정 통항 기록(source=excel/manual) 중 가장 최근 방향"을 위치보다 우선으로 삼아
-// 현재 AG 내부 여부를 판단한다.
-function latestConfirmedDirectionByVessel() {
-  const map = {};
-  for (const r of SOH_TRANSIT_LOG) {
-    if (r.source !== "excel" && r.source !== "manual") continue;
-    if (!map[r.vessel] || r.date > map[r.vessel].date) map[r.vessel] = r;
-  }
-  return map;
-}
-function vesselIsInGulf(v, latestByVessel) {
-  const latest = latestByVessel[v.name];
-  if (latest) return latest.direction.startsWith("WESTBOUND"); // 마지막 확정 통항이 INBOUND면 아직 AG 내부
-  // 확정 통항 기록(엑셀/수동)이 아예 없으면 위경도만으로 AG 내부 여부를 판단하지 않는다 -
-  // 운항레포트 위경도 오기재 하나가 그대로 "AG 내부"로 오인되는 사례(WEST LOYALTY,
-  // 2026-09-15: 반도를 가로지르는 직선상 320여NM 점프)가 있었고, 그런 오탐을
-  // 위경도만으로 안정적으로 걸러낼 방법이 없어(전 세계 연안 항로 전반에 false
-  // positive 다발 확인) 엑셀로 확정되기 전까지는 보수적으로 "AG 밖"으로 둔다.
-  return false;
-}
-
 function sohPendingLi(v) {
   const cargo = v.cargoStatus
     ? `<span class="soh-pending-cargo"><span class="swatch-shape ${v.cargoStatus === "Ballast" ? "bl-ballast" : "bl-laden"}"></span>${v.cargoStatus}</span>`
@@ -3931,12 +3899,10 @@ function sohPendingLi(v) {
 function buildSohPendingLists() {
   const q = (document.getElementById("sohSearchInput").value || "").trim().toUpperCase();
   const matchesQ = name => !q || name.toUpperCase().includes(q);
-  // Cargo Status는 늘 운항레포트(VESSELS.ballast) 기준, Charterer/현위치는 늘
-  // PLAN 엑셀(호르무즈 IN/OUT 시트) 기준 - 명단 멤버십과는 별개로 이름 매칭만으로 보충.
+  // Cargo Status는 늘 운항레포트(VESSELS.ballast) 기준, 나머지(BLT/관리사/용선주/
+  // 현위치)와 명단 멤버십 자체는 PLAN 엑셀(호르무즈 IN/OUT 시트) 기준.
   const vesselByName = {};
   VESSELS.forEach(v => { vesselByName[v.name] = v; });
-  const outboundInfoByName = {};
-  SOH_OUTBOUND_PLAN_INFO.forEach(v => { outboundInfoByName[v.name] = v; });
 
   const inboundList = document.getElementById("sohPendingInboundList");
   const inboundRows = SOH_PENDING_INBOUND.filter(v => matchesQ(v.name))
@@ -3950,16 +3916,13 @@ function buildSohPendingLists() {
     : `<tr><td class="no-data" colspan="6">해당 선박 없음</td></tr>`;
   document.getElementById("sohPendingInboundCount").textContent = inboundRows.length;
 
-  const latestByVessel = latestConfirmedDirectionByVessel();
   const outboundList = document.getElementById("sohPendingOutboundList");
-  const outboundRows = VESSELS.filter(v => vesselIsInGulf(v, latestByVessel) && matchesQ(v.name))
+  const outboundRows = SOH_PENDING_OUTBOUND.filter(v => matchesQ(v.name))
     .map(v => ({
-      name: v.name,
-      built: latestByVessel[v.name]?.built, manager: latestByVessel[v.name]?.manager,
-      charterer: outboundInfoByName[v.name]?.charterer, location: outboundInfoByName[v.name]?.location,
-      cargoStatus: v.ballast || null,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+      name: v.name, built: v.built, manager: v.manager,
+      charterer: v.charterer, location: v.location,
+      cargoStatus: vesselByName[v.name]?.ballast || null,
+    }));
   outboundList.innerHTML = outboundRows.length
     ? outboundRows.map(sohPendingLi).join("")
     : `<tr><td class="no-data" colspan="6">해당 선박 없음</td></tr>`;
