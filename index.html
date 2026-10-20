@@ -1053,7 +1053,117 @@
     .zoom-controls button { width: 34px; height: 32px; font-size: 15px; }
     .map-legend { gap: 8px 16px; }
   }
+
+  /* GitHub Pages 전용 비밀번호 게이트 - .viz-root 스코프 변수에 기대지 않도록
+     색상을 직접 지정(라이트/다크 모두 대응). claude.ai 아티팩트/로컬 file://에는
+     뜨지 않음(해당 접속은 이미 비공개이거나 본인 PC). */
+  .soh-gate-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: none; align-items: center; justify-content: center;
+    background: #fbfaf5; padding: 20px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .soh-gate-overlay { background: #121815; }
+  }
+  .soh-gate-card {
+    width: 100%; max-width: 340px;
+    background: #fff8ee; border: 1px solid rgba(24,36,32,0.12);
+    border-radius: 14px; padding: 28px 24px; text-align: center;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.16);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    .soh-gate-card { background: #1a1310; border-color: rgba(255,255,255,0.10); }
+  }
+  .soh-gate-card h2 {
+    font-family: "Chart Condensed", "Arial Narrow", sans-serif;
+    font-size: 21px; color: #182420; margin: 0 0 6px; letter-spacing: 0.3px;
+  }
+  .soh-gate-card p.soh-gate-sub { font-size: 13px; color: #4d5850; margin: 0 0 18px; }
+  @media (prefers-color-scheme: dark) {
+    .soh-gate-card h2 { color: #eef1ec; }
+    .soh-gate-card p.soh-gate-sub { color: #b6bfb4; }
+  }
+  .soh-gate-card form { display: flex; flex-direction: column; gap: 10px; }
+  .soh-gate-card input[type="password"] {
+    font-size: 15px; padding: 10px 12px; border: 1px solid rgba(24,36,32,0.18);
+    border-radius: 8px; background: #fbfaf5; color: #182420; outline: none;
+  }
+  .soh-gate-card input[type="password"]:focus { border-color: #93672c; }
+  @media (prefers-color-scheme: dark) {
+    .soh-gate-card input[type="password"] { background: #121815; color: #eef1ec; border-color: rgba(255,255,255,0.16); }
+    .soh-gate-card input[type="password"]:focus { border-color: #d9a256; }
+  }
+  .soh-gate-card button {
+    font-size: 14px; font-weight: 600; padding: 10px 12px; border: none;
+    border-radius: 8px; cursor: pointer; background: #93672c; color: #fff8ee;
+  }
+  .soh-gate-card button:hover { background: #7a5522; }
+  @media (prefers-color-scheme: dark) {
+    .soh-gate-card button { background: #d9a256; color: #1a1310; }
+    .soh-gate-card button:hover { background: #e8b46a; }
+  }
+  .soh-gate-err { color: #c0392b; font-size: 12.5px; margin: 10px 0 0; }
+  .soh-gate-shake { animation: sohGateShake 0.4s; }
+  @keyframes sohGateShake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-8px); }
+    40%, 60% { transform: translateX(8px); }
+  }
 </style>
+
+<div id="sohGateOverlay" class="soh-gate-overlay">
+  <div class="soh-gate-card">
+    <h2>Fleet Map</h2>
+    <p class="soh-gate-sub">비밀번호를 입력하세요</p>
+    <form id="sohGateForm" autocomplete="off">
+      <input type="password" id="sohGatePw" placeholder="Password" autofocus />
+      <button type="submit">접속</button>
+    </form>
+    <p class="soh-gate-err" id="sohGateErr" style="display:none">비밀번호가 올바르지 않습니다.</p>
+  </div>
+</div>
+<script>
+(function () {
+  var isGithubPages = /(^|\.)github\.io$/.test(location.hostname);
+  if (!isGithubPages || sessionStorage.getItem("sohGateOk") === "1") return;
+
+  // 콘텐츠가 깜빡 보였다 가려지는 걸 막기 위해 .viz-root 파싱 전에 동기적으로 숨김
+  document.write('<style id="sohGateHideStyle">.viz-root{display:none !important}</style>');
+
+  var PW_HASH = "3fb9501fb1b838d069d1bb8cc25a16ca34655a074047e63662ea46a4fa52d72e"; // SHA-256("claude1234")
+
+  function toHex(buf) {
+    return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+      return b.toString(16).padStart(2, "0");
+    }).join("");
+  }
+
+  var overlay = document.getElementById("sohGateOverlay");
+  overlay.style.display = "flex";
+
+  document.getElementById("sohGateForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var pw = document.getElementById("sohGatePw").value;
+    crypto.subtle.digest("SHA-256", new TextEncoder().encode(pw)).then(function (buf) {
+      if (toHex(buf) === PW_HASH) {
+        sessionStorage.setItem("sohGateOk", "1");
+        overlay.style.display = "none";
+        var hideStyle = document.getElementById("sohGateHideStyle");
+        if (hideStyle) hideStyle.remove();
+      } else {
+        document.getElementById("sohGateErr").style.display = "block";
+        overlay.classList.remove("soh-gate-shake");
+        void overlay.offsetWidth;
+        overlay.classList.add("soh-gate-shake");
+        document.getElementById("sohGatePw").value = "";
+        document.getElementById("sohGatePw").focus();
+      }
+    });
+  });
+})();
+</script>
 
 <div class="viz-root">
   <div class="wrap">
