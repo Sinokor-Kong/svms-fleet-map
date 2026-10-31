@@ -1909,6 +1909,9 @@ const SOH_TRANSIT_LOG = [
   {date:"2026-10-29",vessel:"SRI LANKA PROSPERITY",direction:"EASTBOUND(출항)",source:"excel",built:"2011",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-A",time:"10/29 1440LT (1040GMT)"},{point:"CP-S",time:"10/29 1618LT (1218GMT)"},{point:"CP-D",time:"10/29 1732LT (1332GMT)"},{point:"CP-H",time:"10/29 1932LT (1532GMT)"},{point:"CP-Z",time:"10/29 2130LT (1730GMT)"}]},
   {date:"2026-10-29",vessel:"KUWAIT PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
   {date:"2026-10-29",vessel:"TANZANIA PROSPERITY",direction:"WESTBOUND(입항)",source:"auto",built:null,manager:null,sire:null,waypoints:[]},
+  {date:"2026-10-30",vessel:"BANGLADESH PROSPERITY",direction:"WESTBOUND(입항)",source:"mail",built:"2016",manager:"CSM",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"10/30 1145LT (0745GMT)"},{point:"CP-H",time:"10/30 1325LT (0925GMT)"},{point:"CP-D",time:"10/30 1515LT (1115GMT)"},{point:"CP-S",time:"10/30 1630LT (1230GMT)"},{point:"CP-A",time:"10/30 1800LT (1400GMT)"}]},
+  {date:"2026-10-30",vessel:"DOMINICA PROSPERITY",direction:"WESTBOUND(입항)",source:"mail",built:"2011",manager:"ANGLO E",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"10/30 1156LT (0756GMT)"},{point:"CP-H",time:"10/30 1334LT (0934GMT)"},{point:"CP-D",time:"10/30 1524LT (1124GMT)"},{point:"CP-S",time:"10/30 1648LT (1248GMT)"},{point:"CP-A",time:"10/30 1826LT (1426GMT)"}]},
+  {date:"2026-10-30",vessel:"MALTA PROSPERITY",direction:"WESTBOUND(입항)",source:"mail",built:"2009",manager:"FLEET",sire:"DISCHARGE",waypoints:[{point:"CP-Z",time:"10/30 1200LT (0800GMT)"},{point:"CP-H",time:"10/30 1345LT (0945GMT)"},{point:"CP-D",time:"10/30 1530LT (1130GMT)"},{point:"CP-S",time:"10/30 1650LT (1250GMT)"},{point:"CP-A",time:"10/30 1825LT (1425GMT)"}]},
 ];
 
 // 예정 INBOUND 선박 리스트 — "호르무즈 통항 PLAN" 엑셀의 "호르무즈 IN" 시트에서
@@ -5251,7 +5254,7 @@ function buildSohTable() {
       + `<td class="num">${confirmed.length - pos}</td><td class="num">${sohDateRangeLabel(r)}</td><td class="num">${sohDurationLabel(r)}</td><td>${r.vessel}</td>`
       + `<td class="num">${r.built || "-"}</td><td>${r.manager || "-"}</td>`
       + `<td><span class="swatch-dot ${sohDirClass(r.direction)}"></span>${sohDirLabel(r.direction)}</td>`
-      + `<td><span class="soh-source-badge">${r.source === "excel" ? "PLAN 엑셀" : "수동확인"}</span></td>`
+      + `<td><span class="soh-source-badge">${r.source === "excel" ? "PLAN 엑셀" : r.source === "mail" ? "메일확인" : "수동확인"}</span></td>`
       + `<td class="soh-doc-links">`
       + `<a href="${sohDocFolderUrl(r.vessel, r.date, "Crew List")}" onclick="event.stopPropagation()" target="_blank" rel="noopener" title="문서 폴더 열기 (로컬에서는 D: 드라이브, 웹에서는 비공개 GitHub 저장소 - 접근 권한 필요)">Crew List</a>`
       + ` · <a href="${sohDocFolderUrl(r.vessel, r.date, "Crew Consent")}" onclick="event.stopPropagation()" target="_blank" rel="noopener" title="문서 폴더 열기 (로컬에서는 D: 드라이브, 웹에서는 비공개 GitHub 저장소 - 접근 권한 필요)">Crew Consent</a>`
