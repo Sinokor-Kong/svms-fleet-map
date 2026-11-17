@@ -1959,7 +1959,7 @@ const SOH_PENDING_INBOUND = [{name:"MADAGASCAR PROSPERITY",built:"2012",manager:
 // import_soh_plan_excel.py가 매번 통째로 갈아끼움. 명단 멤버십 자체도 이제 이
 // 시트 기준(과거엔 실시간 위치로 추정했으나, 위경도 오기재로 오탐이 잦고 엑셀에
 // 이미 수기로 관리되는 동일한 목적의 명단이 있어 2026-10-02 엑셀 기준으로 통일).
-const SOH_PENDING_OUTBOUND = [{name:"PORTUGAL PROSPERITY",built:"2011",manager:"SYNERGY",charterer:null,location:"DRIFTING OFF DUBAI"}, {name:"SAMOA PROSPERITY",built:"2006",manager:"ESM",charterer:null,location:"DRIFTING 26°11'N 053°37'E"}, {name:"MALAYSIA PROSPERITY",built:"2011",manager:"SYNERGY",charterer:null,location:"→ SOHAR"}, {name:"BANGLADESH PROSPERITY",built:"2016",manager:"CSM",charterer:null,location:"→ FUJAIRAH (ETA 11/18 2100)"}, {name:"BARBADOS PROSPERITY",built:"2010",manager:"FLEET",charterer:null,location:"RAS TANURA"}, {name:"BELGIUM B",built:"2016",manager:"CSM",charterer:null,location:"→ MUNDRA (ETA 11/22 0800)"}, {name:"ALGERIA PROSPERITY",built:"2013",manager:"ESM",charterer:null,location:"→ RAS TANURA"}, {name:"BRUNEI PROSPERITY",built:"2010",manager:"FLEET",charterer:null,location:"JUAYMAH"}, {name:"CHILE PROSPERITY",built:"2019",manager:"CSM",charterer:null,location:"→ RAS TANURA"}, {name:"COLOMBIA PROSPERITY",built:"2016",manager:"FLEET",charterer:null,location:"BASRAH"}, {name:"DOMINICA PROSPERITY",built:"2011",manager:"ANGLO E",charterer:null,location:"VESSEL AT SPEED ADJUSTMENT POSITION"}, {name:"ECUADOR PROSPERITY",built:"2006",manager:"FLEET",charterer:null,location:"RAS TANURA"}, {name:"ESTONIA PROSPERITY",built:"2008",manager:"SYNERGY",charterer:null,location:"RAS TANURA"}, {name:"INDONESIA PROSPERITY",built:"2005",manager:"CSM",charterer:null,location:"BASRAH"}, {name:"MALTA PROSPERITY",built:"2009",manager:"FLEET",charterer:null,location:"BASRAH"}, {name:"PANAMA PROSPERITY",built:"2013",manager:"SYNERGY",charterer:null,location:"RAS TANURA"}, {name:"PHILIPPINES PROSPERITY",built:"2010",manager:"FLEET",charterer:null,location:"→ RAS TANURA"}, {name:"SOUTH AFRICA PROSPERITY",built:"2011",manager:"CSM",charterer:null,location:"BASRAH"}, {name:"SRI LANKA PROSPERITY",built:"2011",manager:"CSM",charterer:null,location:"BASRAH"}, {name:"SURINAME PROSPERITY",built:"2009",manager:"CSM",charterer:null,location:"BASRAH"}];
+const SOH_PENDING_OUTBOUND = [{name:"PORTUGAL PROSPERITY",built:"2011",manager:"SYNERGY",charterer:null,location:"DRIFTING OFF DUBAI"}, {name:"SAMOA PROSPERITY",built:"2006",manager:"ESM",charterer:null,location:"DRIFTING 26°11'N 053°37'E"}, {name:"MALAYSIA PROSPERITY",built:"2011",manager:"SYNERGY",charterer:null,location:"→ SOHAR"}, {name:"BANGLADESH PROSPERITY",built:"2016",manager:"CSM",charterer:null,location:"→ FUJAIRAH (ETA 11/18 2100)"}, {name:"BARBADOS PROSPERITY",built:"2010",manager:"FLEET",charterer:null,location:"RAS TANURA"}, {name:"BELGIUM B",built:"2016",manager:"CSM",charterer:null,location:"→ MUNDRA (ETA 11/22 0800)"}, {name:"ALGERIA PROSPERITY",built:"2013",manager:"ESM",charterer:null,location:"→ RAS TANURA"}, {name:"BRUNEI PROSPERITY",built:"2010",manager:"FLEET",charterer:null,location:"JUAYMAH"}, {name:"CHILE PROSPERITY",built:"2019",manager:"CSM",charterer:null,location:"→ RAS TANURA"}, {name:"COLOMBIA PROSPERITY",built:"2016",manager:"FLEET",charterer:null,location:"BASRAH"}, {name:"DOMINICA PROSPERITY",built:"2011",manager:"ANGLO E",charterer:null,location:"VESSEL AT SPEED ADJUSTMENT POSITION"}, {name:"ECUADOR PROSPERITY",built:"2006",manager:"FLEET",charterer:null,location:"JUAYMAH"}, {name:"ESTONIA PROSPERITY",built:"2008",manager:"SYNERGY",charterer:null,location:"RAS TANURA"}, {name:"INDONESIA PROSPERITY",built:"2005",manager:"CSM",charterer:null,location:"BASRAH"}, {name:"MALTA PROSPERITY",built:"2009",manager:"FLEET",charterer:null,location:"BASRAH"}, {name:"PANAMA PROSPERITY",built:"2013",manager:"SYNERGY",charterer:null,location:"RAS TANURA"}, {name:"PHILIPPINES PROSPERITY",built:"2010",manager:"FLEET",charterer:null,location:"→ RAS TANURA"}, {name:"SOUTH AFRICA PROSPERITY",built:"2011",manager:"CSM",charterer:null,location:"BASRAH"}, {name:"SRI LANKA PROSPERITY",built:"2011",manager:"CSM",charterer:null,location:"BASRAH"}, {name:"SURINAME PROSPERITY",built:"2009",manager:"CSM",charterer:null,location:"BASRAH"}];
 
 // 날짜별 선단 Laden/Ballast 척수 스냅샷 — auto_update.py가 매 실행마다
 // fleet_status_log.csv 전체 내용으로 이 배열을 재생성함 (하루 1건, 그날 마지막 실행값)
@@ -4599,6 +4599,8 @@ const SOH_DOC_FILES_LOCAL = {
   "MALAYSIA PROSPERITY|1022|Crew List": "11. Crew List - FAL Form 5(2).pdf",
   "MALAYSIA PROSPERITY|1111|Crew Consent": "Malaysia Prosperity - Crew consent forms.pdf",
   "MALAYSIA PROSPERITY|1111|Crew List": "Malaysia Prosperity - Crew list.pdf",
+  "MALAYSIA PROSPERITY|1118|Crew Consent": "OUTBOUND CONSENT FORM 16 NOV 2026.pdf",
+  "MALAYSIA PROSPERITY|1118|Crew List": "11. Crew List - FAL Form 5.pdf",
   "MALTA PROSPERITY|1030|Crew Consent": "CREW CONSENT TEAM G (1).pdf",
   "MALTA PROSPERITY|1030|Crew List": "CREW LIST (11).pdf",
   "MONACO PROSPERITY|0816|Crew Consent": "Crew Consent - Monaco Prosperity.pdf",
@@ -4719,6 +4721,8 @@ const SOH_DOC_FILES_LOCAL = {
   "PORTUGAL PROSPERITY|1028|Crew List": "Portugal Prosperity - Crew list (2).pdf",
   "PORTUGAL PROSPERITY|1112|Crew Consent": "V2605 BALLAST CREW CONSENT YES.pdf",
   "PORTUGAL PROSPERITY|1112|Crew List": "CREW LIST DEP FUJAIRAH  11-NOV-2026.pdf",
+  "PORTUGAL PROSPERITY|1118|Crew Consent": "V 2605 - Loaded - Crew Transit Consent Form.pdf",
+  "PORTUGAL PROSPERITY|1118|Crew List": "CREW LIST DEP JUAYMAH  16-NOV-2026.pdf",
   "SAMOA PROSPERITY|0815|Crew Consent": "Crew Consent.pdf",
   "SAMOA PROSPERITY|0815|Crew List": "Crew List_Samoa.pdf",
   "SAMOA PROSPERITY|0820|Crew Consent": "Binder1.pdf",
@@ -4737,6 +4741,8 @@ const SOH_DOC_FILES_LOCAL = {
   "SAMOA PROSPERITY|1028|Crew List": "Samoa Crewlist-1.pdf",
   "SAMOA PROSPERITY|1113|Crew Consent": "OWNER CREW CONSENT-2.pdf",
   "SAMOA PROSPERITY|1113|Crew List": "M.T. SAMOA PROSPERITY- CREW LIST.pdf",
+  "SAMOA PROSPERITY|1118|Crew Consent": "OWNER CREW CONSENT-2.pdf",
+  "SAMOA PROSPERITY|1118|Crew List": "M.T. SAMOA PROSPERITY- CREW LIST.pdf",
   "SENEGAL PROSPERITY|0826|Crew Consent": "SENEGAL PROSPERITY - Consent Reoport.pdf",
   "SENEGAL PROSPERITY|0826|Crew List": "SENEGAL CREW LIST.pdf",
   "SENEGAL PROSPERITY|0831|Crew Consent": "Crew Consent 23 person 31.08.2026.pdf",
@@ -5180,6 +5186,8 @@ const SOH_DOC_FILES_GITHUB = {
   "MALAYSIA PROSPERITY|1110|Crew List": "Malaysia Prosperity - Crew list.pdf",
   "MALAYSIA PROSPERITY|1111|Crew Consent": "Malaysia Prosperity - Crew consent forms.pdf",
   "MALAYSIA PROSPERITY|1111|Crew List": "Malaysia Prosperity - Crew list.pdf",
+  "MALAYSIA PROSPERITY|1118|Crew Consent": "OUTBOUND CONSENT FORM 16 NOV 2026.pdf",
+  "MALAYSIA PROSPERITY|1118|Crew List": "11. Crew List - FAL Form 5.pdf",
   "MALTA PROSPERITY|1030|Crew Consent": "CREW CONSENT TEAM G (1).pdf",
   "MALTA PROSPERITY|1030|Crew List": "CREW LIST (11).pdf",
   "MONACO PROSPERITY|0816|Crew Consent": "Crew Consent - Monaco Prosperity.pdf",
@@ -5300,6 +5308,8 @@ const SOH_DOC_FILES_GITHUB = {
   "PORTUGAL PROSPERITY|1028|Crew List": "Portugal Prosperity - Crew list (2).pdf",
   "PORTUGAL PROSPERITY|1112|Crew Consent": "V2605 BALLAST CREW CONSENT YES.pdf",
   "PORTUGAL PROSPERITY|1112|Crew List": "CREW LIST DEP FUJAIRAH  11-NOV-2026.pdf",
+  "PORTUGAL PROSPERITY|1118|Crew Consent": "V 2605 - Loaded - Crew Transit Consent Form.pdf",
+  "PORTUGAL PROSPERITY|1118|Crew List": "CREW LIST DEP JUAYMAH  16-NOV-2026.pdf",
   "SAMOA PROSPERITY|0815|Crew Consent": "Crew Consent.pdf",
   "SAMOA PROSPERITY|0815|Crew List": "Crew List_Samoa.pdf",
   "SAMOA PROSPERITY|0820|Crew Consent": "Binder1.pdf",
@@ -5318,6 +5328,8 @@ const SOH_DOC_FILES_GITHUB = {
   "SAMOA PROSPERITY|1028|Crew List": "Samoa Crewlist-1.pdf",
   "SAMOA PROSPERITY|1113|Crew Consent": "OWNER CREW CONSENT-2.pdf",
   "SAMOA PROSPERITY|1113|Crew List": "M.T. SAMOA PROSPERITY- CREW LIST.pdf",
+  "SAMOA PROSPERITY|1118|Crew Consent": "OWNER CREW CONSENT-2.pdf",
+  "SAMOA PROSPERITY|1118|Crew List": "M.T. SAMOA PROSPERITY- CREW LIST.pdf",
   "SENEGAL PROSPERITY|0826|Crew Consent": "SENEGAL PROSPERITY - Consent Reoport.pdf",
   "SENEGAL PROSPERITY|0826|Crew List": "SENEGAL CREW LIST.pdf",
   "SENEGAL PROSPERITY|0831|Crew Consent": "Crew Consent 23 person 31.08.2026.pdf",
